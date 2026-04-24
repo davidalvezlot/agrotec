@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Asistencia</title>
+
+<style>
+body {
+  font-family: Arial;
+  background: #f4f6f9;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+.container {
+  background: white;
+  padding: 30px;
+  border-radius: 10px;
+  text-align: center;
+  width: 300px;
+}
+
+input {
+  width: 90%;
+  padding: 8px;
+  margin: 10px 0;
+}
+
+button {
+  padding: 10px;
+  width: 100%;
+  background: #2ecc71;
+  border: none;
+  color: white;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.estado {
+  margin-top: 15px;
+  font-weight: bold;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+  <h3> Bienvenido</h3>
+  <p>Inicia sesión</p>
+
+  <input type="text" id="correo" placeholder="correo">
+  <input type="password" id="password" placeholder="Contraseña">
+
+  <button onclick="login()">Ingresar</button>
+
+  <div id="panelAsistencia" style="display:none;">
+    <hr>
+    <p id="nombreUsuario"></p>
+    <button onclick="verificarUbicacion()"> Registrar asistencia</button>
+  </div>
+
+  <div class="estado" id="estado"></div>
+
+</div>
+
+<script type="module">
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-app.js";
+import { getFirestore, collection, getDocs, doc, updateDoc } 
+from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
+
+// CONFIG FIREBASE
+const firebaseConfig = {
+  apiKey: "TU_API_KEY",
+  authDomain: "agrotecdb.firebaseapp.com",
+  projectId: "agrotecdb"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+//  RANGO REAL PACHUCA (AMPLIO Y FUNCIONAL)
+const LAT_MIN = 19.95;
+const LAT_MAX = 20.25;
+
+const LNG_MIN = -98.95;
+const LNG_MAX = -98.60;
+
+let usuarioActual = null;
+let usuarioId = null;
+
+// 🔐 LOGIN
+window.login = async () => {
+
+  const correo = document.getElementById("correo").value.trim();
+  const password = document.getElementById("password").value.trim();
+
+  if (!correo || !password) {
+    alert("Completa todos los campos");
+    return;
+  }
+
+  const snapshot = await getDocs(collection(db, "usuarios"));
+
+  let encontrado = false;
+
+  snapshot.forEach((docSnap) => {
+
+    const data = docSnap.data();
+
+    if (data.correo=== correo && data.password === password) {
+
+      usuarioActual = data;
+      usuarioId = docSnap.id;
+      encontrado = true;
+    }
+  });
+
+  if (!encontrado) {
+    alert("El correo o la contraseña no coinciden  ");
+    return;
+  }
+
+  document.getElementById("panelAsistencia").style.display = "block";
+  document.getElementById("nombreUsuario").innerText = "Hola " + usuarioActual.nombre;
+
+  alert("Inicio de sesion exitoso");
+};
+
+//  VERIFICAR UBICACIÓN
+window.verificarUbicacion = () => {
+
+  if (!usuarioId) {
+    alert("Primero inicia sesión");
+    return;
+  }
+
+  navigator.geolocation.getCurrentPosition(async (pos) => {
+
+    const lat = pos.coords.latitude;
+    const lng = pos.coords.longitude;
+
+    console.log(" Ubicación real:", lat, lng);
+
+    let estadoFinal = "inactivo";
+
+    //  VALIDACIÓN PACHUCA 
+    if (
+      lat >= LAT_MIN && lat <= LAT_MAX &&
+      lng >= LNG_MIN && lng <= LNG_MAX
+    ) {
+      estadoFinal = "activo";
+    }
+
+    await updateDoc(doc(db, "usuarios", usuarioId), {
+      estadoHoy: estadoFinal,
+      ultimaAsistencia: new Date().toISOString()
+    });
+
+    document.getElementById("estado").innerText =
+      estadoFinal === "activo"
+      ? "🟢 Estás en Pachuca (Asistencia registrada)"
+      : "🔴Fuera de Pachuca";
+
+  }, (error) => {
+    console.error(error);
+    alert("Error al obtener ubicación ");
+  }, {
+    enableHighAccuracy: true, // mejora precisión
+    timeout: 10000,
+    maximumAge: 0
+  });
+};
+
+</script>
+
+</body>
+</html>
