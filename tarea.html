@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Mi Tarea</title>
+</head>
+
+<body>
+
+<h2>Mi Tarea</h2>
+
+<div id="info"></div>
+
+<br>
+
+<button onclick="iniciar()">▶ Iniciar</button>
+<button onclick="finalizar()">✅ Finalizar</button>
+
+<script type="module">
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-app.js";
+import {
+  getFirestore,
+  doc,
+  getDoc,
+  updateDoc
+} from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
+
+const app = initializeApp({
+  apiKey: "TU_API_KEY",
+  authDomain: "agrotecdb.firebaseapp.com",
+  projectId: "agrotecdb"
+});
+
+const db = getFirestore(app);
+
+const params = new URLSearchParams(window.location.search);
+
+const actId = params.get("actId");
+const nombre = params.get("nombre");
+
+const info = document.getElementById("info");
+
+let actividadData = null;
+
+// 🔄 CARGAR
+async function cargar() {
+
+  const ref = doc(db, "actividades", actId);
+  const snap = await getDoc(ref);
+
+  if (!snap.exists()) {
+    info.innerHTML = "Actividad no encontrada";
+    return;
+  }
+
+  actividadData = snap.data();
+
+  info.innerHTML = `
+    👤 ${nombre}<br><br>
+    📌 ${actividadData.nombre}<br><br>
+    Estado: ${actividadData.estado}
+  `;
+}
+
+cargar();
+
+// ▶ INICIAR
+window.iniciar = async () => {
+
+  await updateDoc(doc(db, "actividades", actId), {
+    estado: "en_proceso"
+  });
+
+  alert("Actividad iniciada");
+  cargar();
+};
+
+// ✅ FINALIZAR
+window.finalizar = async () => {
+
+  await updateDoc(doc(db, "actividades", actId), {
+    estado: "finalizada",
+    fechaFin: new Date().toISOString()
+  });
+
+  alert("Actividad finalizada");
+  cargar();
+};
+
+</script>
+
+</body>
+</html>
