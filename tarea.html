@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Mi Tarea</title>
+
+<style>
+body {
+  font-family: Arial;
+  background: #f4f6f9;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+.container {
+  background: white;
+  padding: 25px;
+  border-radius: 15px;
+  width: 350px;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+  text-align: center;
+}
+
+h2 {
+  margin-bottom: 10px;
+}
+
+.estado {
+  padding: 5px 10px;
+  border-radius: 10px;
+  color: white;
+  display: inline-block;
+  margin-top: 10px;
+}
+
+.en_proceso { background: orange; }
+.disponible { background: gray; }
+.finalizada { background: green; }
+
+.card {
+  margin-top: 20px;
+  text-align: left;
+}
+
+.card p {
+  margin: 8px 0;
+}
+
+button {
+  width: 100%;
+  padding: 10px;
+  margin-top: 10px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  color: white;
+  font-weight: bold;
+}
+
+.iniciar { background: #3498db; }
+.finalizar { background: #2ecc71; }
+
+button:disabled {
+  background: gray;
+}
+</style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+  <h2 id="saludo">Hola </h2>
+
+  <div class="card" id="info"></div>
+
+  <button class="iniciar" onclick="iniciar()"> Iniciar tarea</button>
+  <button class="finalizar" onclick="finalizar()"> Finalizar tarea</button>
+
+</div>
+
+<script type="module">
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-app.js";
+import {
+  getFirestore,
+  doc,
+  getDoc,
+  updateDoc
+} from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
+
+const app = initializeApp({
+  apiKey: "TU_API_KEY",
+  authDomain: "agrotecdb.firebaseapp.com",
+  projectId: "agrotecdb"
+});
+
+const db = getFirestore(app);
+
+const params = new URLSearchParams(window.location.search);
+
+const actId = params.get("actId");
+const nombre = params.get("nombre");
+
+const info = document.getElementById("info");
+const saludo = document.getElementById("saludo");
+
+let actividadData = null;
+
+// 🔄 CARGAR
+async function cargar() {
+
+  saludo.innerHTML = `Hola, ${nombre} `;
+
+  const ref = doc(db, "actividades", actId);
+  const snap = await getDoc(ref);
+
+  if (!snap.exists()) {
+    info.innerHTML = "Actividad no encontrada";
+    return;
+  }
+
+  actividadData = snap.data();
+
+  const estadoClase = actividadData.estado;
+
+  info.innerHTML = `
+    <p><strong> Actividad:</strong> ${actividadData.nombre}</p>
+    <p><strong> Trabajador:</strong> ${actividadData.trabajador}</p>
+    <p><strong> Inicio:</strong> ${actividadData.fechaInicio || "Pendiente"}</p>
+
+    <div class="estado ${estadoClase}">
+      ${actividadData.estado.toUpperCase()}
+    </div>
+  `;
+
+  // 🔒 CONTROL DE BOTONES
+  const btnIniciar = document.querySelector(".iniciar");
+  const btnFinalizar = document.querySelector(".finalizar");
+
+  if (actividadData.estado === "en_proceso") {
+    btnIniciar.disabled = true;
+  }
+
+  if (actividadData.estado === "finalizada") {
+    btnIniciar.disabled = true;
+    btnFinalizar.disabled = true;
+  }
+}
+
+cargar();
+
+// ▶ INICIAR
+window.iniciar = async () => {
+
+  await updateDoc(doc(db, "actividades", actId), {
+    estado: "en_proceso"
+  });
+
+  alert("Actividad iniciada 🚀");
+  cargar();
+};
+
+// ✅ FINALIZAR
+window.finalizar = async () => {
+
+  await updateDoc(doc(db, "actividades", actId), {
+    estado: "finalizada",
+    fechaFin: new Date().toISOString()
+  });
+
+  alert("Actividad finalizada ");
+  cargar();
+};
+
+</script>
+
+</body>
+</html>
