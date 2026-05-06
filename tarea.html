@@ -59,26 +59,26 @@ button {
   font-weight: bold;
 }
 
-.iniciar { background: #3498db; }
 .finalizar { background: #2ecc71; }
+.problema { background: #e74c3c; }
 
 button:disabled {
   background: gray;
 }
 </style>
-
 </head>
 
 <body>
 
 <div class="container">
 
-  <h2 id="saludo">Hola </h2>
+  <h2 id="saludo">Hola</h2>
 
   <div class="card" id="info"></div>
 
-  
-  <button class="finalizar" onclick="finalizar()"> Finalizar tarea</button>
+  <button class="finalizar" onclick="finalizar()">Finalizar tarea</button>
+
+  <button class="problema" onclick="reportarProblema()">Hubo algun problema</button>
 
 </div>
 
@@ -110,10 +110,9 @@ const saludo = document.getElementById("saludo");
 
 let actividadData = null;
 
-// 🔄 CARGAR
 async function cargar() {
 
-  saludo.innerHTML = `Hola, ${nombre} `;
+  saludo.innerHTML = `Hola, ${nombre}`;
 
   const ref = doc(db, "actividades", actId);
   const snap = await getDoc(ref);
@@ -128,43 +127,18 @@ async function cargar() {
   const estadoClase = actividadData.estado;
 
   info.innerHTML = `
-    <p><strong> Actividad:</strong> ${actividadData.nombre}</p>
-    <p><strong> Trabajador:</strong> ${actividadData.trabajador}</p>
-    <p><strong> Inicio:</strong> ${actividadData.fechaInicio || "Pendiente"}</p>
+    <p><strong>Actividad:</strong> ${actividadData.nombre}</p>
+    <p><strong>Trabajador:</strong> ${actividadData.trabajador}</p>
+    <p><strong>Inicio:</strong> ${actividadData.fechaInicio || "Pendiente"}</p>
 
     <div class="estado ${estadoClase}">
       ${actividadData.estado.toUpperCase()}
     </div>
   `;
-
-  // 🔒 CONTROL DE BOTONES
-  const btnIniciar = document.querySelector(".iniciar");
-  const btnFinalizar = document.querySelector(".finalizar");
-
-  if (actividadData.estado === "en_proceso") {
-    btnIniciar.disabled = true;
-  }
-
-  if (actividadData.estado === "finalizada") {
-    btnIniciar.disabled = true;
-    btnFinalizar.disabled = true;
-  }
 }
 
 cargar();
 
-// ▶ INICIAR
-window.iniciar = async () => {
-
-  await updateDoc(doc(db, "actividades", actId), {
-    estado: "en_proceso"
-  });
-
-  alert("Actividad iniciada 🚀");
-  cargar();
-};
-
-// ✅ FINALIZAR
 window.finalizar = async () => {
 
   await updateDoc(doc(db, "actividades", actId), {
@@ -172,8 +146,12 @@ window.finalizar = async () => {
     fechaFin: new Date().toISOString()
   });
 
-  alert("Actividad finalizada ");
+  alert("Actividad finalizada");
   cargar();
+};
+
+window.reportarProblema = () => {
+  window.location.href = `reporte.html?actId=${actId}&nombre=${nombre}`;
 };
 
 </script>
