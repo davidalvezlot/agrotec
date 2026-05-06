@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Resolver Problema</title>
+
+<style>
+body {
+  font-family: Arial;
+  background: #f4f6f9;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+}
+
+.container {
+  background: white;
+  padding: 25px;
+  border-radius: 15px;
+  width: 400px;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+h2 { text-align: center; }
+
+select, button {
+  width: 100%;
+  padding: 10px;
+  margin-top: 10px;
+}
+
+#recursos { margin-top: 10px; }
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<h2>Resolver problema</h2>
+
+<select id="tipo">
+  <option value="">Selecciona problema</option>
+  <option value="error_finalizar">Finalice por error</option>
+  <option value="falta_recurso">No habia recurso</option>
+</select>
+
+<div id="recursos"></div>
+
+<button onclick="resolver()">Resolver</button>
+
+</div>
+
+<script type="module">
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-app.js";
+import {
+  getFirestore,
+  doc,
+  getDoc,
+  updateDoc,
+  collection,
+  getDocs
+} from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
+
+const app = initializeApp({
+  apiKey: "TU_API_KEY",
+  authDomain: "agrotecdb.firebaseapp.com",
+  projectId: "agrotecdb"
+});
+
+const db = getFirestore(app);
+
+const params = new URLSearchParams(window.location.search);
+const actId = params.get("actId");
+
+const tipoSelect = document.getElementById("tipo");
+const contRecursos = document.getElementById("recursos");
+
+let actividad = null;
+let recursosDisponibles = [];
+
+// cargar actividad
+async function cargar() {
+  const snap = await getDoc(doc(db, "actividades", actId));
+  actividad = snap.data();
+}
+cargar();
+
+// detectar cambio de problema
+tipoSelect.addEventListener("change", async () => {
+
+  contRecursos.innerHTML = "";
+
+  if (tipoSelect.value === "falta_recurso") {
+
+    const snap = await getDocs(collection(db, "recursos"));
+
+    recursosDisponibles = snap.docs
+      .map(d => ({ id: d.id, ...d.data() }))
+      .filter(r =>
+        r.zona === actividad.zona &&
+        r.estado === "disponible" &&
+        r.tipo === actividad.tipo
+      );
+
+    if (recursosDisponibles.length === 0) {
+      contRecursos.innerHTML = "No hay recursos disponibles";
+      return;
+    }
+
+    let html = "<label>Selecciona recurso:</label><select id='recurso'>";
+
+    recursosDisponibles.forEach(r => {
+      html += `<option value="${r.id}">${r.nombre}</option>`;
+    });
+
+    html += "</select>";
+
+    contRecursos.innerHTML = html;
+  }
+});
+
+// resolver problema
+window.resolver = async () => {
+
+  const tipo = tipoSelect.value;
+
+  if (!tipo) {
+    alert("Selecciona un problema");
+    return;
+  }
+
+  // caso 1: finalizar por error
+  if (tipo === "error_finalizar") {
+
+    await updateDoc(doc(db, "actividades", actId), {
+      estado: "en_proceso",
+      fechaFin: ""
+    });
+
+    alert("Actividad reabierta");
+    window.history.back();
+  }
+
+  // caso 2: falta de recurso
+  if (tipo === "falta_recurso") {
+
+    const recursoId = document.getElementById("recurso")?.value;
+
+    if (!recursoId) {
+      alert("Selecciona un recurso");
+      return;
+    }
+
+    const recurso = recursosDisponibles.find(r => r.id === recursoId);
+
+    // asignar recurso
+    await updateDoc(doc(db, "actividades", actId), {
+      recursoAsignado: recurso.nombre,
+      recursoId: recurso.id,
+      estado: "en_proceso"
+    });
+
+    // marcar recurso como en uso
+    await updateDoc(doc(db, "recursos", recurso.id), {
+      estado: "en_uso",
+      asignadoA: actividad.trabajador
+    });
+
+    alert("Recurso asignado correctamente");
+    window.history.back();
+  }
+
+};
+
+</script>
+
+</body>
+</html>
