@@ -19,13 +19,16 @@ body {
   padding: 30px;
   border-radius: 10px;
   text-align: center;
-  width: 300px;
+  width: 320px;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.1);
 }
 
 input {
   width: 90%;
-  padding: 8px;
+  padding: 10px;
   margin: 10px 0;
+  border: 1px solid #ccc;
+  border-radius: 5px;
 }
 
 button {
@@ -36,11 +39,22 @@ button {
   color: white;
   border-radius: 5px;
   cursor: pointer;
+  font-weight: bold;
+}
+
+button:hover {
+  background: #27ae60;
 }
 
 .estado {
   margin-top: 15px;
   font-weight: bold;
+}
+
+.info {
+  font-size: 13px;
+  color: #666;
+  margin-top: 10px;
 }
 </style>
 </head>
@@ -49,18 +63,26 @@ button {
 
 <div class="container">
 
-  <h3> Bienvenido</h3>
+  <h3>Bienvenido</h3>
   <p>Inicia sesión</p>
 
-  <input type="text" id="correo" placeholder="correo">
+  <input type="text" id="correo" placeholder="Correo">
   <input type="password" id="password" placeholder="Contraseña">
 
   <button onclick="login()">Ingresar</button>
 
   <div id="panelAsistencia" style="display:none;">
     <hr>
+
     <p id="nombreUsuario"></p>
-    <button onclick="verificarUbicacion()"> Registrar asistencia</button>
+
+    <button onclick="verificarUbicacion()">
+      Registrar asistencia
+    </button>
+
+    <div class="info">
+      Instituto Tecnológico de Pachuca
+    </div>
   </div>
 
   <div class="estado" id="estado"></div>
@@ -69,11 +91,19 @@ button {
 
 <script type="module">
 
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-app.js";
-import { getFirestore, collection, getDocs, doc, updateDoc } 
+import { initializeApp }
+from "https://www.gstatic.com/firebasejs/12.12.1/firebase-app.js";
+
+import {
+  getFirestore,
+  collection,
+  getDocs,
+  doc,
+  updateDoc
+}
 from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
 
-// CONFIG FIREBASE
+// FIREBASE
 const firebaseConfig = {
   apiKey: "TU_API_KEY",
   authDomain: "agrotecdb.firebaseapp.com",
@@ -83,17 +113,30 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-//  RANGO REAL PACHUCA (AMPLIO Y FUNCIONAL)
-const LAT_MIN = 19.95;
-const LAT_MAX = 20.25;
+/*
+COORDENADAS:
+Instituto Tecnológico de Pachuca
 
-const LNG_MIN = -98.95;
-const LNG_MAX = -98.60;
+20°05'02'' N
+98°46'30'' O
+
+Convertidas a decimal:
+Latitud: 20.0839
+Longitud: -98.7750
+*/
+
+// CENTRO
+const LAT_CENTRO = 20.0839;
+const LNG_CENTRO = -98.7750;
+
+// RANGO PERMITIDO
+// aproximadamente 300-400 metros
+const MARGEN = 0.0040;
 
 let usuarioActual = null;
 let usuarioId = null;
 
-// 🔐 LOGIN
+// LOGIN
 window.login = async () => {
 
   const correo = document.getElementById("correo").value.trim();
@@ -112,26 +155,32 @@ window.login = async () => {
 
     const data = docSnap.data();
 
-    if (data.correo=== correo && data.password === password) {
+    if (
+      data.correo === correo &&
+      data.password === password
+    ) {
 
       usuarioActual = data;
       usuarioId = docSnap.id;
       encontrado = true;
     }
+
   });
 
   if (!encontrado) {
-    alert("El correo o la contraseña no coinciden  ");
+    alert("El correo o la contraseña no coinciden");
     return;
   }
 
   document.getElementById("panelAsistencia").style.display = "block";
-  document.getElementById("nombreUsuario").innerText = "Hola " + usuarioActual.nombre;
 
-  alert("Inicio de sesion exitoso");
+  document.getElementById("nombreUsuario").innerText =
+    "Hola " + usuarioActual.nombre;
+
+  alert("Inicio de sesión exitoso");
 };
 
-//  VERIFICAR UBICACIÓN
+// VERIFICAR UBICACIÓN
 window.verificarUbicacion = () => {
 
   if (!usuarioId) {
@@ -139,41 +188,71 @@ window.verificarUbicacion = () => {
     return;
   }
 
-  navigator.geolocation.getCurrentPosition(async (pos) => {
+  navigator.geolocation.getCurrentPosition(
 
-    const lat = pos.coords.latitude;
-    const lng = pos.coords.longitude;
+    async (pos) => {
 
-    console.log(" Ubicación real:", lat, lng);
+      const lat = pos.coords.latitude;
+      const lng = pos.coords.longitude;
 
-    let estadoFinal = "inactivo";
+      console.log("Ubicación actual:", lat, lng);
 
-    //  VALIDACIÓN PACHUCA 
-    if (
-      lat >= LAT_MIN && lat <= LAT_MAX &&
-      lng >= LNG_MIN && lng <= LNG_MAX
-    ) {
-      estadoFinal = "activo";
+      let estadoFinal = "inactivo";
+
+      // VALIDAR DISTANCIA
+      const dentroLat =
+        lat >= (LAT_CENTRO - MARGEN) &&
+        lat <= (LAT_CENTRO + MARGEN);
+
+      const dentroLng =
+        lng >= (LNG_CENTRO - MARGEN) &&
+        lng <= (LNG_CENTRO + MARGEN);
+
+      if (dentroLat && dentroLng) {
+        estadoFinal = "activo";
+      }
+
+      // ACTUALIZAR FIREBASE
+      await updateDoc(doc(db, "usuarios", usuarioId), {
+
+        estadoHoy: estadoFinal,
+
+        ultimaAsistencia: new Date().toISOString(),
+
+        ubicacion: {
+          latitud: lat,
+          longitud: lng
+        }
+
+      });
+
+      // MENSAJE
+      document.getElementById("estado").innerText =
+
+        estadoFinal === "activo"
+
+        ? "Asistencia registrada correctamente"
+
+        : "Fuera del área permitida";
+
+    },
+
+    (error) => {
+
+      console.error(error);
+
+      alert("Error al obtener ubicación");
+
+    },
+
+    {
+      enableHighAccuracy: true,
+      timeout: 10000,
+      maximumAge: 0
     }
 
-    await updateDoc(doc(db, "usuarios", usuarioId), {
-      estadoHoy: estadoFinal,
-      ultimaAsistencia: new Date().toISOString()
-    });
+  );
 
-    document.getElementById("estado").innerText =
-      estadoFinal === "activo"
-      ? "🟢 Estás en Pachuca (Asistencia registrada)"
-      : "🔴Fuera de Pachuca";
-
-  }, (error) => {
-    console.error(error);
-    alert("Error al obtener ubicación ");
-  }, {
-    enableHighAccuracy: true, // mejora precisión
-    timeout: 10000,
-    maximumAge: 0
-  });
 };
 
 </script>
