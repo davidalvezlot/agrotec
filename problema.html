@@ -134,7 +134,7 @@ const db = getFirestore(app);
 
 
 // EMAILJS
-emailjs.init("ef-dBrhYWH_SJjX7x");
+emailjs.init("1xgXkmn1R5msn0Tmo");
 
 
 // PARAMS
@@ -229,32 +229,32 @@ window.resolver = async () => {
 
     // ENVIAR CORREO
     const response =
-      await emailjs.send(
+   await emailjs.send(
 
-        "service_1uiukzg",
+  "service_1uiukzg",
 
-        "template_4rr3rb8",
+  "template_4rr3rb8",
 
-        {
+  {
 
-          trabajador:
-            actividad.trabajador,
+    trabajador:
+      actividad.trabajador,
 
-          actividad:
-            actividad.nombre,
+    actividad:
+      actividad.nombre,
 
-          zona:
-            actividad.zona,
+    zona:
+      actividad.zona,
 
-          descripcion:
-            descripcion,
+    descripcion:
+      descripcion,
 
-          actividadId:
-            actId
+    actividadId:
+      actId
 
-        }
+  }
 
-      );
+);
 
     console.log(response);
 
