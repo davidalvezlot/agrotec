@@ -117,374 +117,51 @@ button:hover{
 
 <script type="module">
 
-import { initializeApp }
-from "https://www.gstatic.com/firebasejs/12.12.1/firebase-app.js";
-
-import {
-  getFirestore,
-  doc,
-  getDoc,
-  updateDoc,
-  collection,
-  getDocs,
-  addDoc
-}
-from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
 
 
-// FIREBASE
-const app = initializeApp({
-
-  apiKey:"TU_API_KEY",
-
-  authDomain:"agrotecdb.firebaseapp.com",
-
-  projectId:"agrotecdb"
-
-});
-
-const db = getFirestore(app);
-
-
-// EMAILJS
 emailjs.init("1xgXkmn1R5msn0Tmo");
 
+async function resolver(){
 
-// PARAMS
-const params =
-  new URLSearchParams(window.location.search);
+  try{
 
-const actId =
-  params.get("actId");
+    const response = await emailjs.send(
 
+      "service_1uiukzg",
 
-// ELEMENTOS
-const tipoSelect =
-  document.getElementById("tipo");
+      "template_4rr3rb8",
 
-const contRecursos =
-  document.getElementById("recursos");
+      {
 
+        trabajador:"David",
 
-// VARIABLES
-let actividad = null;
+        actividad:"Prueba",
 
-let recursosDisponibles = [];
+        zona:"Zona A",
 
+        descripcion:"Correo de prueba",
 
-// CARGAR ACTIVIDAD
-async function cargar(){
-
-  const snap =
-    await getDoc(
-      doc(db,"actividades",actId)
-    );
-
-  if(!snap.exists()){
-
-    alert("Actividad no encontrada");
-
-    return;
-
-  }
-
-  actividad = snap.data();
-
-}
-
-cargar();
-
-
-// CAMBIO DE PROBLEMA
-tipoSelect.addEventListener(
-  "change",
-
-  async ()=>{
-
-    contRecursos.innerHTML = "";
-
-    // FALTA DE RECURSO
-    if(
-      tipoSelect.value ===
-      "falta_recurso"
-    ){
-
-      const snap =
-        await getDocs(
-          collection(db,"recursos")
-        );
-
-      recursosDisponibles =
-
-        snap.docs
-
-        .map(d => ({
-          id:d.id,
-          ...d.data()
-        }))
-
-        .filter(r =>
-
-          r.zona === actividad.zona &&
-
-          r.tipo === actividad.tipo &&
-
-          r.estado === "disponible"
-
-        );
-
-      // SIN RECURSOS
-      if(
-        recursosDisponibles.length === 0
-      ){
-
-        contRecursos.innerHTML =
-          "No hay recursos disponibles";
-
-        return;
+        actividadId:"123"
 
       }
 
-      let html =
-
-        "<label>Selecciona recurso:</label>";
-
-      html +=
-        "<select id='recurso'>";
-
-      recursosDisponibles.forEach(r=>{
-
-        html += `
-
-          <option value="${r.id}">
-            ${r.nombre}
-          </option>
-
-        `;
-
-      });
-
-      html += "</select>";
-
-      contRecursos.innerHTML = html;
-
-    }
-
-  }
-
-);
-
-
-// RESOLVER
-window.resolver = async ()=>{
-
-  const tipo =
-    tipoSelect.value;
-
-  const descripcion =
-    document
-      .getElementById("descripcion")
-      .value
-      .trim();
-
-  if(!tipo){
-
-    alert(
-      "Selecciona un problema"
     );
 
-    return;
+    console.log(response);
+
+    alert("Correo enviado correctamente");
+
+  }
+  catch(error){
+
+    console.log(error);
+
+    alert(JSON.stringify(error));
 
   }
 
+}
 
-  // FINALIZÓ POR ERROR
-  if(
-    tipo === "error_finalizar"
-  ){
-
-    try{
-
-      // GUARDAR SOLICITUD
-      await addDoc(
-
-        collection(
-          db,
-          "solicitudesReapertura"
-        ),
-
-        {
-
-          actividadId:
-            actId,
-
-          actividad:
-            actividad.nombre,
-
-          trabajador:
-            actividad.trabajador,
-
-          zona:
-            actividad.zona,
-
-          descripcion:
-            descripcion,
-
-          estado:
-            "pendiente",
-
-          fecha:
-            new Date().toISOString()
-
-        }
-
-      );
-
-
-      // ENVIAR CORREO
-      await emailjs.send(
-
-        "service_1uiukzg",
-
-        "template_4rr3rb8",
-
-        {
-
-          trabajador:
-            actividad.trabajador,
-
-          actividad:
-            actividad.nombre,
-
-          zona:
-            actividad.zona,
-
-          descripcion:
-            descripcion,
-
-          actividadId:
-            actId
-
-        }
-
-      );
-
-      alert(
-        "Correo enviado correctamente"
-      );
-
-      window.location.href =
-        "index.html";
-
-    }
-    catch(error){
-
-      console.error(error);
-
-      alert(
-        "Error al enviar correo"
-      );
-
-    }
-
-  }
-
-
-  // FALTA DE RECURSO
-  if(
-    tipo === "falta_recurso"
-  ){
-
-    const recursoId =
-
-      document
-        .getElementById("recurso")
-        ?.value;
-
-    if(!recursoId){
-
-      alert(
-        "Selecciona un recurso"
-      );
-
-      return;
-
-    }
-
-    const recurso =
-
-      recursosDisponibles.find(
-        r => r.id === recursoId
-      );
-
-    try{
-
-      // ACTUALIZAR ACTIVIDAD
-      await updateDoc(
-
-        doc(
-          db,
-          "actividades",
-          actId
-        ),
-
-        {
-
-          recursoAsignado:
-            recurso.nombre,
-
-          recursoId:
-            recurso.id,
-
-          estado:
-            "en_proceso"
-
-        }
-
-      );
-
-
-      // ACTUALIZAR RECURSO
-      await updateDoc(
-
-        doc(
-          db,
-          "recursos",
-          recurso.id
-        ),
-
-        {
-
-          estado:
-            "en_uso",
-
-          asignadoA:
-            actividad.trabajador
-
-        }
-
-      );
-
-      alert(
-        "Recurso asignado correctamente"
-      );
-
-      window.history.back();
-
-    }
-    catch(error){
-
-      console.error(error);
-
-      alert(
-        "Error al asignar recurso"
-      );
-
-    }
-
-  }
-
-};
 
 </script>
 
