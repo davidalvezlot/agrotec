@@ -62,6 +62,10 @@ button:hover{
   font-size:14px;
 }
 
+#recursos{
+  margin-top:10px;
+}
+
 </style>
 </head>
 
@@ -81,7 +85,13 @@ button:hover{
       Finalicé por error
     </option>
 
+    <option value="falta_recurso">
+      No había recurso
+    </option>
+
   </select>
+
+  <div id="recursos"></div>
 
   <textarea
     id="descripcion"
@@ -94,8 +104,9 @@ button:hover{
 
   <div class="info">
 
-    El administrador recibirá
-    automáticamente el correo.
+    Si la actividad fue finalizada por error,
+    se enviará automáticamente un correo
+    al administrador.
 
   </div>
 
@@ -113,8 +124,10 @@ import {
   getFirestore,
   doc,
   getDoc,
-  addDoc,
-  collection
+  updateDoc,
+  collection,
+  getDocs,
+  addDoc
 }
 from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
 
@@ -145,8 +158,18 @@ const actId =
   params.get("actId");
 
 
-// ACTIVIDAD
+// ELEMENTOS
+const tipoSelect =
+  document.getElementById("tipo");
+
+const contRecursos =
+  document.getElementById("recursos");
+
+
+// VARIABLES
 let actividad = null;
+
+let recursosDisponibles = [];
 
 
 // CARGAR ACTIVIDAD
@@ -172,107 +195,292 @@ async function cargar(){
 cargar();
 
 
-// RESOLVER
-window.resolver = async () => {
+// CAMBIO DE PROBLEMA
+tipoSelect.addEventListener(
+  "change",
 
-  const tipo =
-    document.getElementById("tipo").value;
+  async ()=>{
 
-  const descripcion =
-    document.getElementById("descripcion")
-    .value
-    .trim();
+    contRecursos.innerHTML = "";
 
-  if(!tipo){
+    // FALTA DE RECURSO
+    if(
+      tipoSelect.value ===
+      "falta_recurso"
+    ){
 
-    alert("Selecciona un problema");
+      const snap =
+        await getDocs(
+          collection(db,"recursos")
+        );
 
-    return;
+      recursosDisponibles =
 
-  }
+        snap.docs
 
-  try{
+        .map(d => ({
+          id:d.id,
+          ...d.data()
+        }))
 
-    // GUARDAR EN FIREBASE
-    await addDoc(
+        .filter(r =>
 
-      collection(
-        db,
-        "solicitudesReapertura"
-      ),
+          r.zona === actividad.zona &&
 
-      {
+          r.tipo === actividad.tipo &&
 
-        actividadId:actId,
+          r.estado === "disponible"
 
-        actividad:
-          actividad.nombre,
+        );
 
-        trabajador:
-          actividad.trabajador,
+      // SIN RECURSOS
+      if(
+        recursosDisponibles.length === 0
+      ){
 
-        zona:
-          actividad.zona,
+        contRecursos.innerHTML =
+          "No hay recursos disponibles";
 
-        descripcion:
-          descripcion,
-
-        fecha:
-          new Date().toISOString(),
-
-        estado:"pendiente"
+        return;
 
       }
 
-    );
+      let html =
 
+        "<label>Selecciona recurso:</label>";
 
-    // ENVIAR CORREO
-    const response =
-   await emailjs.send(
+      html +=
+        "<select id='recurso'>";
 
-  "service_1uiukzg",
+      recursosDisponibles.forEach(r=>{
 
-  "template_4rr3rb8",
+        html += `
 
-  {
+          <option value="${r.id}">
+            ${r.nombre}
+          </option>
 
-    trabajador:
-      actividad.trabajador,
+        `;
 
-    actividad:
-      actividad.nombre,
+      });
 
-    zona:
-      actividad.zona,
+      html += "</select>";
 
-    descripcion:
-      descripcion,
+      contRecursos.innerHTML = html;
 
-    actividadId:
-      actId
+    }
 
   }
 
 );
 
-    console.log(response);
+
+// RESOLVER
+window.resolver = async ()=>{
+
+  const tipo =
+    tipoSelect.value;
+
+  const descripcion =
+    document
+      .getElementById("descripcion")
+      .value
+      .trim();
+
+  if(!tipo){
 
     alert(
-      "Correo enviado correctamente"
+      "Selecciona un problema"
     );
 
-    window.location.href =
-      "index.html";
+    return;
 
   }
-  catch(error){
 
-    console.error(error);
 
-    alert(
-      "Error al enviar correo"
-    );
+  // FINALIZÓ POR ERROR
+  if(
+    tipo === "error_finalizar"
+  ){
+
+    try{
+
+      // GUARDAR SOLICITUD
+      await addDoc(
+
+        collection(
+          db,
+          "solicitudesReapertura"
+        ),
+
+        {
+
+          actividadId:
+            actId,
+
+          actividad:
+            actividad.nombre,
+
+          trabajador:
+            actividad.trabajador,
+
+          zona:
+            actividad.zona,
+
+          descripcion:
+            descripcion,
+
+          estado:
+            "pendiente",
+
+          fecha:
+            new Date().toISOString()
+
+        }
+
+      );
+
+
+      // ENVIAR CORREO
+      await emailjs.send(
+
+        "service_1uiukzg",
+
+        "template_4rr3rb8",
+
+        {
+
+          trabajador:
+            actividad.trabajador,
+
+          actividad:
+            actividad.nombre,
+
+          zona:
+            actividad.zona,
+
+          descripcion:
+            descripcion,
+
+          actividadId:
+            actId
+
+        }
+
+      );
+
+      alert(
+        "Correo enviado correctamente"
+      );
+
+      window.location.href =
+        "index.html";
+
+    }
+    catch(error){
+
+      console.error(error);
+
+      alert(
+        "Error al enviar correo"
+      );
+
+    }
+
+  }
+
+
+  // FALTA DE RECURSO
+  if(
+    tipo === "falta_recurso"
+  ){
+
+    const recursoId =
+
+      document
+        .getElementById("recurso")
+        ?.value;
+
+    if(!recursoId){
+
+      alert(
+        "Selecciona un recurso"
+      );
+
+      return;
+
+    }
+
+    const recurso =
+
+      recursosDisponibles.find(
+        r => r.id === recursoId
+      );
+
+    try{
+
+      // ACTUALIZAR ACTIVIDAD
+      await updateDoc(
+
+        doc(
+          db,
+          "actividades",
+          actId
+        ),
+
+        {
+
+          recursoAsignado:
+            recurso.nombre,
+
+          recursoId:
+            recurso.id,
+
+          estado:
+            "en_proceso"
+
+        }
+
+      );
+
+
+      // ACTUALIZAR RECURSO
+      await updateDoc(
+
+        doc(
+          db,
+          "recursos",
+          recurso.id
+        ),
+
+        {
+
+          estado:
+            "en_uso",
+
+          asignadoA:
+            actividad.trabajador
+
+        }
+
+      );
+
+      alert(
+        "Recurso asignado correctamente"
+      );
+
+      window.history.back();
+
+    }
+    catch(error){
+
+      console.error(error);
+
+      alert(
+        "Error al asignar recurso"
+      );
+
+    }
 
   }
 
