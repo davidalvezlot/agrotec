@@ -5,83 +5,84 @@
 <title>Mi Tarea</title>
 
 <style>
-body {
-  font-family: Arial;
-  background: #f4f6f9;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100vh;
+
+body{
+  font-family:Arial;
+  background:#f4f6f9;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  height:100vh;
 }
 
-.container {
-  background: white;
-  padding: 25px;
-  border-radius: 15px;
-  width: 360px;
-  box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-  text-align: center;
+.container{
+  background:white;
+  padding:25px;
+  border-radius:15px;
+  width:360px;
+  box-shadow:0 5px 15px rgba(0,0,0,0.1);
+  text-align:center;
 }
 
-h2 {
-  margin-bottom: 10px;
+h2{
+  margin-bottom:10px;
 }
 
-.estado {
-  padding: 5px 10px;
-  border-radius: 10px;
-  color: white;
-  display: inline-block;
-  margin-top: 10px;
+.estado{
+  padding:5px 10px;
+  border-radius:10px;
+  color:white;
+  display:inline-block;
+  margin-top:10px;
 }
 
-.en_proceso {
-  background: orange;
+.en_proceso{
+  background:orange;
 }
 
-.disponible {
-  background: gray;
+.disponible{
+  background:gray;
 }
 
-.finalizada {
-  background: green;
+.finalizada{
+  background:green;
 }
 
-.card {
-  margin-top: 20px;
-  text-align: left;
+.card{
+  margin-top:20px;
+  text-align:left;
 }
 
-.card p {
-  margin: 8px 0;
+.card p{
+  margin:8px 0;
 }
 
-button {
-  width: 100%;
-  padding: 10px;
-  margin-top: 10px;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  color: white;
-  font-weight: bold;
+button{
+  width:100%;
+  padding:10px;
+  margin-top:10px;
+  border:none;
+  border-radius:8px;
+  cursor:pointer;
+  color:white;
+  font-weight:bold;
 }
 
-.iniciar {
-  background: #3498db;
+.iniciar{
+  background:#3498db;
 }
 
-.finalizar {
-  background: #2ecc71;
+.finalizar{
+  background:#2ecc71;
 }
 
-.problema {
-  background: #e74c3c;
+.problema{
+  background:#e74c3c;
 }
 
-button:disabled {
-  background: gray;
-  cursor: not-allowed;
+button:disabled{
+  background:gray;
+  cursor:not-allowed;
 }
 
 .progreso-box{
@@ -108,6 +109,7 @@ button:disabled {
   font-size:14px;
   font-weight:bold;
 }
+
 </style>
 </head>
 
@@ -186,7 +188,7 @@ const app = initializeApp({
 const db = getFirestore(app);
 
 
-// PARAMS
+// PARAMETROS
 const params = new URLSearchParams(window.location.search);
 
 const actId = params.get("actId");
@@ -194,23 +196,20 @@ const nombre = params.get("nombre");
 
 
 // ELEMENTOS
-const info =
-  document.getElementById("info");
+const info = document.getElementById("info");
 
-const saludo =
-  document.getElementById("saludo");
+const saludo = document.getElementById("saludo");
 
-const barra =
-  document.getElementById("barraProgreso");
+const barra = document.getElementById("barraProgreso");
 
 const textoProgreso =
-  document.getElementById("textoProgreso");
+document.getElementById("textoProgreso");
 
 const btnIniciar =
-  document.getElementById("btnIniciar");
+document.getElementById("btnIniciar");
 
 const btnFinalizar =
-  document.getElementById("btnFinalizar");
+document.getElementById("btnFinalizar");
 
 
 let actividadData = null;
@@ -219,21 +218,20 @@ let intervalo = null;
 
 
 // CARGAR
-async function cargar() {
+async function cargar(){
 
-  saludo.innerHTML =
-    `Hola, ${nombre}`;
+  saludo.innerHTML = `Hola, ${nombre}`;
 
   const ref =
-    doc(db, "actividades", actId);
+  doc(db,"actividades",actId);
 
   const snap =
-    await getDoc(ref);
+  await getDoc(ref);
 
-  if (!snap.exists()) {
+  if(!snap.exists()){
 
     info.innerHTML =
-      "Actividad no encontrada";
+    "Actividad no encontrada";
 
     return;
 
@@ -242,7 +240,7 @@ async function cargar() {
   actividadData = snap.data();
 
   const estadoClase =
-    actividadData.estado || "disponible";
+  actividadData.estado || "disponible";
 
   info.innerHTML = `
 
@@ -262,16 +260,8 @@ async function cargar() {
     </p>
 
     <p>
-      <strong>Duración estimada:</strong>
+      <strong>Duración:</strong>
       ${actividadData.duracionHoras || 2} horas
-    </p>
-
-    <p>
-      <strong>Inicio:</strong>
-      ${
-        actividadData.fechaInicio ||
-        "Pendiente"
-      }
     </p>
 
     <div class="estado ${estadoClase}">
@@ -280,14 +270,26 @@ async function cargar() {
 
   `;
 
-  // IMPORTANTE:
-  // SOLO iniciar contador SI YA ESTÁ iniciada
-  // Y SI fechaInicio EXISTE
 
-  if (
-    actividadData.iniciada === true &&
-    actividadData.fechaInicio
-  ) {
+  // SI YA ESTA FINALIZADA
+  if(actividadData.estado === "finalizada"){
+
+    barra.style.width = "100%";
+
+    textoProgreso.innerHTML =
+    "Actividad completada";
+
+    btnIniciar.disabled = true;
+
+    btnFinalizar.disabled = true;
+
+    return;
+
+  }
+
+
+  // SI YA ESTA INICIADA MANUALMENTE
+  if(actividadData.iniciada === true){
 
     btnIniciar.disabled = true;
 
@@ -295,35 +297,17 @@ async function cargar() {
 
     iniciarContador();
 
-  }
-
-  else {
+  }else{
 
     // NO INICIADA
-    btnIniciar.disabled = false;
-
-    btnFinalizar.disabled = true;
-
     barra.style.width = "0%";
 
     textoProgreso.innerHTML =
-      "Esperando inicio";
+    "Esperando inicio";
 
-  }
-
-  // FINALIZADA
-  if (
-    actividadData.estado === "finalizada"
-  ) {
-
-    btnIniciar.disabled = true;
+    btnIniciar.disabled = false;
 
     btnFinalizar.disabled = true;
-
-    barra.style.width = "100%";
-
-    textoProgreso.innerHTML =
-      "Actividad completada";
 
   }
 
@@ -332,55 +316,46 @@ async function cargar() {
 cargar();
 
 
-// INICIAR TAREA
+// INICIAR
 window.iniciar = async () => {
 
-  // EVITAR DOBLE CLICK
-  if (actividadData.iniciada === true) {
-
+  if(actividadData.iniciada === true){
     return;
-
   }
 
   const ahora =
-    new Date().toISOString();
+  new Date().toISOString();
 
-  // CAMBIAR BOTONES
-  btnIniciar.disabled = true;
-
-  btnFinalizar.disabled = false;
-
-  // GUARDAR EN FIREBASE
   await updateDoc(
 
-    doc(db, "actividades", actId),
+    doc(db,"actividades",actId),
 
     {
 
-      iniciada: true,
+      iniciada:true,
 
-      estado: "en_proceso",
+      estado:"en_proceso",
 
-      fechaInicio: ahora,
+      fechaInicio:ahora,
 
-      progreso: 0,
+      progreso:0,
 
-      tiempoTranscurrido: 0
+      tiempoTranscurrido:0
 
     }
 
   );
 
-  // ACTUALIZAR LOCAL
   actividadData.iniciada = true;
-
-  actividadData.estado = "en_proceso";
 
   actividadData.fechaInicio = ahora;
 
-  actividadData.progreso = 0;
+  actividadData.estado = "en_proceso";
 
-  // INICIAR CONTADOR
+  btnIniciar.disabled = true;
+
+  btnFinalizar.disabled = false;
+
   iniciarContador();
 
   alert("Actividad iniciada");
@@ -389,92 +364,83 @@ window.iniciar = async () => {
 
 
 // CONTADOR
-function iniciarContador() {
+function iniciarContador(){
 
-  // EVITAR MÚLTIPLES INTERVALOS
-  if (intervalo) {
+  if(intervalo){
 
     clearInterval(intervalo);
 
   }
 
-  intervalo = setInterval(async () => {
-
-    if (
-      !actividadData.fechaInicio
-    ) {
-      return;
-    }
+  intervalo = setInterval(async()=>{
 
     const inicio =
-      new Date(
-        actividadData.fechaInicio
-      ).getTime();
+    new Date(
+      actividadData.fechaInicio
+    ).getTime();
 
     const ahora =
-      new Date().getTime();
+    new Date().getTime();
 
     const transcurrido =
-      Math.floor(
-        (ahora - inicio) / 1000
-      );
+    Math.floor(
+      (ahora - inicio)/1000
+    );
 
     const duracionSegundos =
-      (actividadData.duracionHoras || 2)
-      * 3600;
+    (actividadData.duracionHoras || 2)
+    * 3600;
 
     let porcentaje =
-      Math.floor(
-        (
-          transcurrido /
-          duracionSegundos
-        ) * 100
-      );
+    Math.floor(
+      (transcurrido/duracionSegundos)
+      * 100
+    );
 
-    if (porcentaje > 100) {
+    if(porcentaje > 100){
 
       porcentaje = 100;
 
     }
 
     barra.style.width =
-      porcentaje + "%";
+    porcentaje + "%";
 
     textoProgreso.innerHTML =
-      porcentaje + "% completado";
+    porcentaje + "% completado";
 
     await updateDoc(
 
-      doc(db, "actividades", actId),
+      doc(db,"actividades",actId),
 
       {
 
-        progreso: porcentaje,
+        progreso:porcentaje,
 
         tiempoTranscurrido:
-          transcurrido
+        transcurrido
 
       }
 
     );
 
-    if (porcentaje >= 100) {
+    if(porcentaje >= 100){
 
       clearInterval(intervalo);
 
     }
 
-  }, 1000);
+  },1000);
 
 }
 
 
 // FINALIZAR
-window.finalizar = async () => {
+window.finalizar = async()=>{
 
-  if (
+  if(
     actividadData.iniciada !== true
-  ) {
+  ){
 
     alert(
       "Primero debes iniciar la tarea"
@@ -487,28 +453,28 @@ window.finalizar = async () => {
   clearInterval(intervalo);
 
   const horas =
-    actividadData.duracionHoras || 2;
+  actividadData.duracionHoras || 2;
 
-  // FINALIZAR ACTIVIDAD
   await updateDoc(
 
-    doc(db, "actividades", actId),
+    doc(db,"actividades",actId),
 
     {
 
-      estado: "finalizada",
+      estado:"finalizada",
 
       fechaFin:
-        new Date().toISOString(),
+      new Date().toISOString(),
 
-      progreso: 100
+      progreso:100
 
     }
 
   );
 
+
   // SUMAR HORAS
-  if (actividadData.usuarioId) {
+  if(actividadData.usuarioId){
 
     await updateDoc(
 
@@ -521,12 +487,12 @@ window.finalizar = async () => {
       {
 
         horasHoy:
-          increment(horas),
+        increment(horas),
 
         actividadesHoy:
-          increment(1),
+        increment(1),
 
-        ultimoProgreso: 100
+        ultimoProgreso:100
 
       }
 
@@ -534,8 +500,9 @@ window.finalizar = async () => {
 
   }
 
+
   // LIBERAR RECURSO
-  if (actividadData.recursoId) {
+  if(actividadData.recursoId){
 
     await updateDoc(
 
@@ -547,13 +514,13 @@ window.finalizar = async () => {
 
       {
 
-        estado: "disponible",
+        estado:"disponible",
 
-        asignadoA: "",
+        asignadoA:"",
 
-        nombreAsignado: "",
+        nombreAsignado:"",
 
-        rolAsignado: ""
+        rolAsignado:""
 
       }
 
@@ -564,19 +531,17 @@ window.finalizar = async () => {
   barra.style.width = "100%";
 
   textoProgreso.innerHTML =
-    "Actividad completada";
+  "Actividad completada";
 
   btnFinalizar.disabled = true;
 
   alert("Actividad finalizada");
 
-  cargar();
-
 };
 
 
-// REPORTAR PROBLEMA
-window.reportarProblema = () => {
+// PROBLEMA
+window.reportarProblema = ()=>{
 
   window.location.href =
 
