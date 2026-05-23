@@ -22,15 +22,35 @@ body {
   box-shadow: 0 5px 15px rgba(0,0,0,0.1);
 }
 
-h2 { text-align: center; }
+h2 {
+  text-align: center;
+}
 
-select, button {
+select,
+button,
+textarea {
   width: 100%;
   padding: 10px;
   margin-top: 10px;
+  box-sizing: border-box;
 }
 
-#recursos { margin-top: 10px; }
+textarea {
+  resize: none;
+  height: 100px;
+}
+
+#recursos {
+  margin-top: 10px;
+}
+
+.info {
+  margin-top: 15px;
+  background: #f7f7f7;
+  padding: 10px;
+  border-radius: 8px;
+  font-size: 14px;
+}
 </style>
 </head>
 
@@ -38,31 +58,53 @@ select, button {
 
 <div class="container">
 
-<h2>Resolver problema</h2>
+  <h2>Resolver problema</h2>
 
-<select id="tipo">
-  <option value="">Selecciona problema</option>
-  <option value="error_finalizar">Finalice por error</option>
-  <option value="falta_recurso">No habia recurso</option>
-</select>
+  <select id="tipo">
+    <option value="">Selecciona problema</option>
 
-<div id="recursos"></div>
+    <option value="error_finalizar">
+      Finalicé por error
+    </option>
 
-<button onclick="resolver()">Resolver</button>
+    <option value="falta_recurso">
+      No había recurso
+    </option>
+  </select>
+
+  <div id="recursos"></div>
+
+  <textarea
+    id="descripcion"
+    placeholder="Describe el problema">
+  </textarea>
+
+  <button onclick="resolver()">
+    Resolver
+  </button>
+
+  <div class="info">
+    En caso de reapertura de actividad,
+    el administrador deberá autorizarla.
+  </div>
 
 </div>
 
 <script type="module">
 
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-app.js";
+import { initializeApp }
+from "https://www.gstatic.com/firebasejs/12.12.1/firebase-app.js";
+
 import {
   getFirestore,
   doc,
   getDoc,
   updateDoc,
   collection,
-  getDocs
-} from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
+  getDocs,
+  addDoc
+}
+from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
 
 const app = initializeApp({
   apiKey: "TU_API_KEY",
@@ -73,104 +115,228 @@ const app = initializeApp({
 const db = getFirestore(app);
 
 const params = new URLSearchParams(window.location.search);
+
 const actId = params.get("actId");
 
 const tipoSelect = document.getElementById("tipo");
-const contRecursos = document.getElementById("recursos");
+
+const contRecursos =
+  document.getElementById("recursos");
 
 let actividad = null;
+
 let recursosDisponibles = [];
 
-// cargar actividad
+// CARGAR ACTIVIDAD
 async function cargar() {
-  const snap = await getDoc(doc(db, "actividades", actId));
+
+  const snap =
+    await getDoc(doc(db, "actividades", actId));
+
   actividad = snap.data();
+
 }
+
 cargar();
 
-// detectar cambio de problema
+// CAMBIO DE PROBLEMA
 tipoSelect.addEventListener("change", async () => {
 
   contRecursos.innerHTML = "";
 
+  // FALTA RECURSO
   if (tipoSelect.value === "falta_recurso") {
 
-    const snap = await getDocs(collection(db, "recursos"));
+    const snap =
+      await getDocs(collection(db, "recursos"));
 
     recursosDisponibles = snap.docs
-      .map(d => ({ id: d.id, ...d.data() }))
+
+      .map(d => ({
+        id: d.id,
+        ...d.data()
+      }))
+
       .filter(r =>
+
         r.zona === actividad.zona &&
+
         r.estado === "disponible" &&
+
         r.tipo === actividad.tipo
+
       );
 
     if (recursosDisponibles.length === 0) {
-      contRecursos.innerHTML = "No hay recursos disponibles";
+
+      contRecursos.innerHTML =
+        "No hay recursos disponibles";
+
       return;
+
     }
 
-    let html = "<label>Selecciona recurso:</label><select id='recurso'>";
+    let html =
+      "<label>Selecciona recurso:</label>";
+
+    html += "<select id='recurso'>";
 
     recursosDisponibles.forEach(r => {
-      html += `<option value="${r.id}">${r.nombre}</option>`;
+
+      html += `
+        <option value="${r.id}">
+          ${r.nombre}
+        </option>
+      `;
+
     });
 
     html += "</select>";
 
     contRecursos.innerHTML = html;
+
   }
+
 });
 
-// resolver problema
+// RESOLVER
 window.resolver = async () => {
 
   const tipo = tipoSelect.value;
 
+  const descripcion =
+    document.getElementById("descripcion")
+    .value.trim();
+
   if (!tipo) {
+
     alert("Selecciona un problema");
     return;
+
   }
 
-  // caso 1: finalizar por error
+  // FINALIZÓ POR ERROR
   if (tipo === "error_finalizar") {
 
-    await updateDoc(doc(db, "actividades", actId), {
-      estado: "en_proceso",
-      fechaFin: ""
-    });
+    // GUARDAR SOLICITUD
+    await addDoc(
+      collection(db, "solicitudesReapertura"),
+      {
 
-    alert("Actividad reabierta");
-    window.history.back();
+        actividadId: actId,
+
+        actividad: actividad.nombre,
+
+        trabajador: actividad.trabajador,
+
+        zona: actividad.zona,
+
+        descripcion,
+
+        estado: "pendiente",
+
+        fecha:
+          new Date().toISOString()
+
+      }
+    );
+
+    // CORREO ADMIN
+    const asunto =
+      "Solicitud de reapertura de actividad";
+
+    const mensaje =
+
+`El trabajador ${actividad.trabajador}
+solicita reabrir una actividad.
+
+Actividad:
+${actividad.nombre}
+
+Zona:
+${actividad.zona}
+
+Descripción:
+${descripcion}
+
+Si autorizas la reapertura,
+deberás cambiar el estado de la
+actividad nuevamente a:
+
+en_proceso
+
+Y limpiar la fechaFin.
+
+Actividad ID:
+${actId}`;
+
+    const mailto =
+
+`mailto:l24200787@pachuca.tecnm.mx?subject=${encodeURIComponent(asunto)}&body=${encodeURIComponent(mensaje)}`;
+
+    window.location.href = mailto;
+
+    alert(
+      "Solicitud enviada al administrador"
+    );
+
+    window.location.href = "index.html";
+
   }
 
-  // caso 2: falta de recurso
+  // FALTA DE RECURSO
   if (tipo === "falta_recurso") {
 
-    const recursoId = document.getElementById("recurso")?.value;
+    const recursoId =
+      document.getElementById("recurso")?.value;
 
     if (!recursoId) {
+
       alert("Selecciona un recurso");
       return;
+
     }
 
-    const recurso = recursosDisponibles.find(r => r.id === recursoId);
+    const recurso =
+      recursosDisponibles.find(
+        r => r.id === recursoId
+      );
 
-    // asignar recurso
-    await updateDoc(doc(db, "actividades", actId), {
-      recursoAsignado: recurso.nombre,
-      recursoId: recurso.id,
-      estado: "en_proceso"
-    });
+    // ASIGNAR RECURSO
+    await updateDoc(
+      doc(db, "actividades", actId),
+      {
 
-    // marcar recurso como en uso
-    await updateDoc(doc(db, "recursos", recurso.id), {
-      estado: "en_uso",
-      asignadoA: actividad.trabajador
-    });
+        recursoAsignado:
+          recurso.nombre,
 
-    alert("Recurso asignado correctamente");
+        recursoId:
+          recurso.id,
+
+        estado: "en_proceso"
+
+      }
+    );
+
+    // RECURSO EN USO
+    await updateDoc(
+      doc(db, "recursos", recurso.id),
+      {
+
+        estado: "en_uso",
+
+        asignadoA:
+          actividad.trabajador
+
+      }
+    );
+
+    alert(
+      "Recurso asignado correctamente"
+    );
+
     window.history.back();
+
   }
 
 };
