@@ -119,20 +119,29 @@ button:disabled {
     </div>
 
     <div class="texto-progreso" id="textoProgreso">
-      0%
+      Esperando inicio
     </div>
 
   </div>
 
-  <button class="iniciar" id="btnIniciar" onclick="iniciar()">
+  <!-- BOTÓN INICIAR -->
+  <button class="iniciar"
+          id="btnIniciar"
+          onclick="iniciar()">
     Iniciar tarea
   </button>
 
-  <button class="finalizar" id="btnFinalizar" onclick="finalizar()">
+  <!-- BOTÓN FINALIZAR -->
+  <button class="finalizar"
+          id="btnFinalizar"
+          onclick="finalizar()"
+          disabled>
     Finalizar tarea
   </button>
 
-  <button class="problema" onclick="reportarProblema()">
+  <!-- BOTÓN PROBLEMA -->
+  <button class="problema"
+          onclick="reportarProblema()">
     Hubo algún problema
   </button>
 
@@ -140,7 +149,8 @@ button:disabled {
 
 <script type="module">
 
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-app.js";
+import { initializeApp }
+from "https://www.gstatic.com/firebasejs/12.12.1/firebase-app.js";
 
 import {
   getFirestore,
@@ -148,29 +158,41 @@ import {
   getDoc,
   updateDoc,
   increment
-} from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
+}
+from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
 
+// FIREBASE
 const app = initializeApp({
+
   apiKey: "TU_API_KEY",
   authDomain: "agrotecdb.firebaseapp.com",
   projectId: "agrotecdb"
+
 });
 
 const db = getFirestore(app);
 
+// PARAMS
 const params = new URLSearchParams(window.location.search);
 
 const actId = params.get("actId");
 const nombre = params.get("nombre");
 
+// ELEMENTOS
 const info = document.getElementById("info");
 const saludo = document.getElementById("saludo");
 
-const barra = document.getElementById("barraProgreso");
-const textoProgreso = document.getElementById("textoProgreso");
+const barra =
+  document.getElementById("barraProgreso");
 
-const btnIniciar = document.getElementById("btnIniciar");
-const btnFinalizar = document.getElementById("btnFinalizar");
+const textoProgreso =
+  document.getElementById("textoProgreso");
+
+const btnIniciar =
+  document.getElementById("btnIniciar");
+
+const btnFinalizar =
+  document.getElementById("btnFinalizar");
 
 let actividadData = null;
 
@@ -179,36 +201,53 @@ let intervalo = null;
 // CARGAR ACTIVIDAD
 async function cargar() {
 
-  saludo.innerHTML = `Hola, ${nombre}`;
+  saludo.innerHTML =
+    `Hola, ${nombre}`;
 
-  const ref = doc(db, "actividades", actId);
+  const ref =
+    doc(db, "actividades", actId);
 
-  const snap = await getDoc(ref);
+  const snap =
+    await getDoc(ref);
 
   if (!snap.exists()) {
 
-    info.innerHTML = "Actividad no encontrada";
+    info.innerHTML =
+      "Actividad no encontrada";
+
     return;
 
   }
 
   actividadData = snap.data();
 
-  const estadoClase = actividadData.estado;
+  const estadoClase =
+    actividadData.estado;
 
   info.innerHTML = `
 
-    <p><strong>Actividad:</strong> ${actividadData.nombre}</p>
+    <p>
+      <strong>Actividad:</strong>
+      ${actividadData.nombre}
+    </p>
 
-    <p><strong>Trabajador:</strong> ${actividadData.trabajador}</p>
+    <p>
+      <strong>Trabajador:</strong>
+      ${actividadData.trabajador}
+    </p>
 
-    <p><strong>Zona:</strong> ${actividadData.zona}</p>
+    <p>
+      <strong>Zona:</strong>
+      ${actividadData.zona}
+    </p>
 
-    <p><strong>Duración estimada:</strong>
+    <p>
+      <strong>Duración estimada:</strong>
       ${actividadData.duracionHoras || 2} horas
     </p>
 
-    <p><strong>Inicio:</strong>
+    <p>
+      <strong>Inicio:</strong>
       ${actividadData.fechaInicio || "Pendiente"}
     </p>
 
@@ -218,26 +257,42 @@ async function cargar() {
 
   `;
 
-  // BOTONES
-  if (actividadData.estado === "disponible") {
+  // ACTIVIDAD DISPONIBLE
+  if (
+    actividadData.estado === "disponible"
+  ) {
 
     btnIniciar.disabled = false;
+
     btnFinalizar.disabled = true;
+
+    barra.style.width = "0%";
+
+    textoProgreso.innerHTML =
+      "Esperando inicio";
 
   }
 
-  if (actividadData.estado === "en_proceso") {
+  // ACTIVIDAD EN PROCESO
+  if (
+    actividadData.estado === "en_proceso"
+  ) {
 
     btnIniciar.disabled = true;
+
     btnFinalizar.disabled = false;
 
     iniciarContador();
 
   }
 
-  if (actividadData.estado === "finalizada") {
+  // ACTIVIDAD FINALIZADA
+  if (
+    actividadData.estado === "finalizada"
+  ) {
 
     btnIniciar.disabled = true;
+
     btnFinalizar.disabled = true;
 
     barra.style.width = "100%";
@@ -251,76 +306,110 @@ async function cargar() {
 
 cargar();
 
-// INICIAR TAREA
+
+// INICIAR ACTIVIDAD
 window.iniciar = async () => {
 
-  const ahora = new Date().toISOString();
+  const ahora =
+    new Date().toISOString();
 
-  // CAMBIAR BOTÓN
+  // BOTÓN AZUL -> GRIS
   btnIniciar.disabled = true;
 
-  await updateDoc(doc(db, "actividades", actId), {
+  // ACTIVAR FINALIZAR
+  btnFinalizar.disabled = false;
 
-    estado: "en_proceso",
+  // GUARDAR EN FIREBASE
+  await updateDoc(
+    doc(db, "actividades", actId),
+    {
 
-    fechaInicio: ahora,
+      estado: "en_proceso",
 
-    progreso: 0,
+      fechaInicio: ahora,
 
-    tiempoTranscurrido: 0
+      progreso: 0,
 
-  });
+      tiempoTranscurrido: 0
 
+    }
+  );
+
+  // ACTUALIZAR DATOS
+  actividadData.estado = "en_proceso";
+
+  actividadData.fechaInicio = ahora;
+
+  actividadData.progreso = 0;
+
+  // INICIAR CONTADOR
   iniciarContador();
 
   alert("Actividad iniciada");
 
-  cargar();
-
 };
+
 
 // CONTADOR
 function iniciarContador() {
 
   if (intervalo) {
+
     clearInterval(intervalo);
+
   }
 
   intervalo = setInterval(async () => {
 
     const inicio =
-      new Date(actividadData.fechaInicio).getTime();
+      new Date(
+        actividadData.fechaInicio
+      ).getTime();
 
     const ahora =
       new Date().getTime();
 
     const transcurrido =
-      Math.floor((ahora - inicio) / 1000);
+      Math.floor(
+        (ahora - inicio) / 1000
+      );
 
     const duracionSegundos =
-      (actividadData.duracionHoras || 2) * 3600;
+      (actividadData.duracionHoras || 2)
+      * 3600;
 
     let porcentaje =
-      Math.floor((transcurrido / duracionSegundos) * 100);
+      Math.floor(
+        (transcurrido / duracionSegundos)
+        * 100
+      );
 
     if (porcentaje > 100) {
+
       porcentaje = 100;
+
     }
 
-    barra.style.width = porcentaje + "%";
+    // ACTUALIZAR BARRA
+    barra.style.width =
+      porcentaje + "%";
 
     textoProgreso.innerHTML =
       porcentaje + "% completado";
 
     // GUARDAR PROGRESO
-    await updateDoc(doc(db, "actividades", actId), {
+    await updateDoc(
+      doc(db, "actividades", actId),
+      {
 
-      progreso: porcentaje,
+        progreso: porcentaje,
 
-      tiempoTranscurrido: transcurrido
+        tiempoTranscurrido: transcurrido
 
-    });
+      }
+    );
 
+    // SI TERMINA
     if (porcentaje >= 100) {
 
       clearInterval(intervalo);
@@ -331,41 +420,80 @@ function iniciarContador() {
 
 }
 
+
 // FINALIZAR
 window.finalizar = async () => {
 
-  // DETENER CONTADOR
   clearInterval(intervalo);
 
   const horas =
     actividadData.duracionHoras || 2;
 
   // FINALIZAR ACTIVIDAD
-  await updateDoc(doc(db, "actividades", actId), {
+  await updateDoc(
+    doc(db, "actividades", actId),
+    {
 
-    estado: "finalizada",
+      estado: "finalizada",
 
-    fechaFin: new Date().toISOString(),
+      fechaFin:
+        new Date().toISOString(),
 
-    progreso: 100
+      progreso: 100
 
-  });
+    }
+  );
 
-  // SUMAR HORAS Y ACTIVIDADES
+  // SUMAR PROGRESO
   if (actividadData.usuarioId) {
 
     await updateDoc(
-      doc(db, "usuarios", actividadData.usuarioId),
+
+      doc(
+        db,
+        "usuarios",
+        actividadData.usuarioId
+      ),
+
       {
 
-        horasHoy: increment(horas),
+        horasHoy:
+          increment(horas),
 
-        actividadesHoy: increment(1),
+        actividadesHoy:
+          increment(1),
 
-        ultimoProgreso:
-          actividadData.progreso || 100
+        ultimoProgreso: 100
 
       }
+
+    );
+
+  }
+
+  // LIBERAR RECURSO
+  if (actividadData.recursoId) {
+
+    await updateDoc(
+
+      doc(
+        db,
+        "recursos",
+        actividadData.recursoId
+      ),
+
+      {
+
+        estado: "disponible",
+
+        asignadoA: "",
+
+        nombreAsignado: "",
+
+        rolAsignado: ""
+
+      }
+
     );
 
   }
@@ -383,10 +511,12 @@ window.finalizar = async () => {
 
 };
 
-// PROBLEMA
+
+// REPORTAR PROBLEMA
 window.reportarProblema = () => {
 
   window.location.href =
+
     `problema.html?actId=${actId}&nombre=${nombre}`;
 
 };
