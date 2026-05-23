@@ -19,7 +19,7 @@ body {
   padding: 30px;
   border-radius: 10px;
   text-align: center;
-  width: 320px;
+  width: 340px;
   box-shadow: 0 5px 15px rgba(0,0,0,0.1);
 }
 
@@ -56,6 +56,44 @@ button:hover {
   color: #666;
   margin-top: 10px;
 }
+
+/* PROGRESO */
+.panel-progreso{
+  margin-top:20px;
+  text-align:left;
+}
+
+.barra{
+  width:100%;
+  height:25px;
+  background:#ddd;
+  border-radius:20px;
+  overflow:hidden;
+  margin-top:8px;
+}
+
+.progreso{
+  height:100%;
+  width:0%;
+  background:#2ecc71;
+  transition:0.4s;
+}
+
+.stats{
+  margin-top:10px;
+  font-size:14px;
+  color:#444;
+}
+
+.completo{
+  color:#27ae60;
+  font-weight:bold;
+}
+
+.incompleto{
+  color:#e67e22;
+  font-weight:bold;
+}
 </style>
 </head>
 
@@ -72,6 +110,7 @@ button:hover {
   <button onclick="login()">Ingresar</button>
 
   <div id="panelAsistencia" style="display:none;">
+
     <hr>
 
     <p id="nombreUsuario"></p>
@@ -83,6 +122,34 @@ button:hover {
     <div class="info">
       Instituto Tecnológico de Pachuca
     </div>
+
+    <!-- PROGRESO -->
+    <div class="panel-progreso">
+
+      <h4>Progreso diario</h4>
+
+      <div class="barra">
+        <div class="progreso" id="barraProgreso"></div>
+      </div>
+
+      <div class="stats">
+        <p>
+          Actividades completadas:
+          <strong id="actividadesCompletadas">0</strong>/3
+        </p>
+
+        <p>
+          Horas trabajadas:
+          <strong id="horasTrabajadas">0</strong>/6
+        </p>
+
+        <p id="estadoJornada" class="incompleto">
+          Jornada incompleta
+        </p>
+      </div>
+
+    </div>
+
   </div>
 
   <div class="estado" id="estado"></div>
@@ -99,7 +166,10 @@ import {
   collection,
   getDocs,
   doc,
-  updateDoc
+  updateDoc,
+  query,
+  where,
+  onSnapshot
 }
 from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
 
@@ -114,23 +184,12 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 /*
-COORDENADAS:
 Instituto Tecnológico de Pachuca
-
-20°05'02'' N
-98°46'30'' O
-
-Convertidas a decimal:
-Latitud: 20.0839
-Longitud: -98.7750
 */
 
-// CENTRO
 const LAT_CENTRO = 20.0839;
 const LNG_CENTRO = -98.7750;
 
-// RANGO PERMITIDO
-// aproximadamente 300-400 metros
 const MARGEN = 0.0040;
 
 let usuarioActual = null;
@@ -177,8 +236,103 @@ window.login = async () => {
   document.getElementById("nombreUsuario").innerText =
     "Hola " + usuarioActual.nombre;
 
+  cargarProgreso();
+
   alert("Inicio de sesión exitoso");
 };
+
+// PROGRESO EN TIEMPO REAL
+function cargarProgreso() {
+
+  const hoy = new Date().toISOString().split("T")[0];
+
+  const q = query(
+    collection(db, "actividades"),
+    where("usuarioId", "==", usuarioId)
+  );
+
+  onSnapshot(q, (snapshot) => {
+
+    let actividadesFinalizadas = 0;
+    let horasTotales = 0;
+
+    snapshot.forEach((docSnap) => {
+
+      const act = docSnap.data();
+
+      if (
+        act.estado === "finalizada" &&
+        act.fechaFin
+      ) {
+
+        const fechaActividad =
+          act.fechaFin.split("T")[0];
+
+        if (fechaActividad === hoy) {
+
+          actividadesFinalizadas++;
+
+          horasTotales += Number(
+            act.duracionHoras || 0
+          );
+        }
+
+      }
+
+    });
+
+    // ACTIVIDADES
+    document.getElementById(
+      "actividadesCompletadas"
+    ).innerText = actividadesFinalizadas;
+
+    // HORAS
+    document.getElementById(
+      "horasTrabajadas"
+    ).innerText = horasTotales.toFixed(1);
+
+    // PORCENTAJE
+    let porcentajeActividades =
+      (actividadesFinalizadas / 3) * 100;
+
+    let porcentajeHoras =
+      (horasTotales / 6) * 100;
+
+    let porcentajeFinal =
+      (porcentajeActividades + porcentajeHoras) / 2;
+
+    if (porcentajeFinal > 100) {
+      porcentajeFinal = 100;
+    }
+
+    document.getElementById(
+      "barraProgreso"
+    ).style.width = porcentajeFinal + "%";
+
+    // ESTADO
+    const estado = document.getElementById("estadoJornada");
+
+    if (
+      actividadesFinalizadas >= 3 &&
+      horasTotales >= 6
+    ) {
+
+      estado.innerText =
+        "Jornada completada";
+
+      estado.className = "completo";
+
+    } else {
+
+      estado.innerText =
+        "Jornada incompleta";
+
+      estado.className = "incompleto";
+    }
+
+  });
+
+}
 
 // VERIFICAR UBICACIÓN
 window.verificarUbicacion = () => {
@@ -195,11 +349,8 @@ window.verificarUbicacion = () => {
       const lat = pos.coords.latitude;
       const lng = pos.coords.longitude;
 
-      console.log("Ubicación actual:", lat, lng);
-
       let estadoFinal = "inactivo";
 
-      // VALIDAR DISTANCIA
       const dentroLat =
         lat >= (LAT_CENTRO - MARGEN) &&
         lat <= (LAT_CENTRO + MARGEN);
@@ -212,7 +363,6 @@ window.verificarUbicacion = () => {
         estadoFinal = "activo";
       }
 
-      // ACTUALIZAR FIREBASE
       await updateDoc(doc(db, "usuarios", usuarioId), {
 
         estadoHoy: estadoFinal,
@@ -226,7 +376,6 @@ window.verificarUbicacion = () => {
 
       });
 
-      // MENSAJE
       document.getElementById("estado").innerText =
 
         estadoFinal === "activo"
