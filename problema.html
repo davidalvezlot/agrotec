@@ -329,6 +329,10 @@ window.resolver = async () => {
 
       );
 
+      // LINK REAPERTURA
+      const link =
+
+`https://davidalvezlot.github.io/reabrir/?actId=${actId}`;
 
       // ENVIAR CORREO
       await emailjs.send(
@@ -352,7 +356,13 @@ window.resolver = async () => {
             descripcion,
 
           actividadId:
-            actId
+            actId,
+
+          link:
+            link,
+
+          to_email:
+            "l24200787@pachuca.tecnm.mx"
 
         }
 
@@ -365,7 +375,9 @@ window.resolver = async () => {
       window.location.href =
         "index.html";
 
-    } catch (error) {
+    }
+
+    catch (error) {
 
       console.error(error);
 
