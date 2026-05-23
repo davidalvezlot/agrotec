@@ -39,7 +39,7 @@ h2 {
   background: orange;
 }
 
-.asignada {
+.disponible {
   background: gray;
 }
 
@@ -173,6 +173,7 @@ import {
 }
 from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
 
+
 // FIREBASE
 const app = initializeApp({
 
@@ -184,11 +185,13 @@ const app = initializeApp({
 
 const db = getFirestore(app);
 
+
 // PARAMS
 const params = new URLSearchParams(window.location.search);
 
 const actId = params.get("actId");
 const nombre = params.get("nombre");
+
 
 // ELEMENTOS
 const info =
@@ -209,11 +212,13 @@ const btnIniciar =
 const btnFinalizar =
   document.getElementById("btnFinalizar");
 
+
 let actividadData = null;
 
 let intervalo = null;
 
-// CARGAR ACTIVIDAD
+
+// CARGAR
 async function cargar() {
 
   saludo.innerHTML =
@@ -237,7 +242,7 @@ async function cargar() {
   actividadData = snap.data();
 
   const estadoClase =
-    actividadData.estado;
+    actividadData.estado || "disponible";
 
   info.innerHTML = `
 
@@ -270,10 +275,41 @@ async function cargar() {
     </p>
 
     <div class="estado ${estadoClase}">
-      ${actividadData.estado.toUpperCase()}
+      ${estadoClase.toUpperCase()}
     </div>
 
   `;
+
+  // IMPORTANTE:
+  // SOLO iniciar contador SI YA ESTÁ iniciada
+  // Y SI fechaInicio EXISTE
+
+  if (
+    actividadData.iniciada === true &&
+    actividadData.fechaInicio
+  ) {
+
+    btnIniciar.disabled = true;
+
+    btnFinalizar.disabled = false;
+
+    iniciarContador();
+
+  }
+
+  else {
+
+    // NO INICIADA
+    btnIniciar.disabled = false;
+
+    btnFinalizar.disabled = true;
+
+    barra.style.width = "0%";
+
+    textoProgreso.innerHTML =
+      "Esperando inicio";
+
+  }
 
   // FINALIZADA
   if (
@@ -289,37 +325,6 @@ async function cargar() {
     textoProgreso.innerHTML =
       "Actividad completada";
 
-    return;
-
-  }
-
-  // ASIGNADA
-  if (
-    actividadData.estado === "asignada"
-  ) {
-
-    btnIniciar.disabled = false;
-
-    btnFinalizar.disabled = true;
-
-    barra.style.width = "0%";
-
-    textoProgreso.innerHTML =
-      "Esperando inicio";
-
-  }
-
-  // EN PROCESO
-  if (
-    actividadData.estado === "en_proceso"
-  ) {
-
-    btnIniciar.disabled = true;
-
-    btnFinalizar.disabled = false;
-
-    iniciarContador();
-
   }
 
 }
@@ -327,21 +332,29 @@ async function cargar() {
 cargar();
 
 
-// INICIAR ACTIVIDAD
+// INICIAR TAREA
 window.iniciar = async () => {
+
+  // EVITAR DOBLE CLICK
+  if (actividadData.iniciada === true) {
+
+    return;
+
+  }
 
   const ahora =
     new Date().toISOString();
 
-  // BOTÓN AZUL -> GRIS
+  // CAMBIAR BOTONES
   btnIniciar.disabled = true;
 
-  // ACTIVAR FINALIZAR
   btnFinalizar.disabled = false;
 
-  // GUARDAR
+  // GUARDAR EN FIREBASE
   await updateDoc(
+
     doc(db, "actividades", actId),
+
     {
 
       iniciada: true,
@@ -355,6 +368,7 @@ window.iniciar = async () => {
       tiempoTranscurrido: 0
 
     }
+
   );
 
   // ACTUALIZAR LOCAL
@@ -377,6 +391,7 @@ window.iniciar = async () => {
 // CONTADOR
 function iniciarContador() {
 
+  // EVITAR MÚLTIPLES INTERVALOS
   if (intervalo) {
 
     clearInterval(intervalo);
@@ -384,6 +399,12 @@ function iniciarContador() {
   }
 
   intervalo = setInterval(async () => {
+
+    if (
+      !actividadData.fechaInicio
+    ) {
+      return;
+    }
 
     const inicio =
       new Date(
@@ -423,7 +444,9 @@ function iniciarContador() {
       porcentaje + "% completado";
 
     await updateDoc(
+
       doc(db, "actividades", actId),
+
       {
 
         progreso: porcentaje,
@@ -432,6 +455,7 @@ function iniciarContador() {
           transcurrido
 
       }
+
     );
 
     if (porcentaje >= 100) {
@@ -449,8 +473,7 @@ function iniciarContador() {
 window.finalizar = async () => {
 
   if (
-    actividadData.estado !==
-    "en_proceso"
+    actividadData.iniciada !== true
   ) {
 
     alert(
@@ -466,9 +489,11 @@ window.finalizar = async () => {
   const horas =
     actividadData.duracionHoras || 2;
 
-  // FINALIZAR
+  // FINALIZAR ACTIVIDAD
   await updateDoc(
+
     doc(db, "actividades", actId),
+
     {
 
       estado: "finalizada",
@@ -479,6 +504,7 @@ window.finalizar = async () => {
       progreso: 100
 
     }
+
   );
 
   // SUMAR HORAS
