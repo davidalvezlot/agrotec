@@ -59,12 +59,21 @@ button {
   font-weight: bold;
 }
 
-.iniciar { background: #3498db; }
-.finalizar { background: #2ecc71; }
-.problema { background: #e74c3c; }
+.iniciar {
+  background: #3498db;
+}
+
+.finalizar {
+  background: #2ecc71;
+}
+
+.problema {
+  background: #e74c3c;
+}
 
 button:disabled {
   background: gray;
+  cursor: not-allowed;
 }
 
 .progreso-box{
@@ -102,7 +111,7 @@ button:disabled {
 
   <div class="card" id="info"></div>
 
-  <!-- PROGRESO -->
+  <!-- BARRA -->
   <div class="progreso-box">
 
     <div class="barra">
@@ -232,7 +241,9 @@ async function cargar() {
     btnFinalizar.disabled = true;
 
     barra.style.width = "100%";
-    textoProgreso.innerHTML = "Actividad completada";
+
+    textoProgreso.innerHTML =
+      "Actividad completada";
 
   }
 
@@ -240,10 +251,13 @@ async function cargar() {
 
 cargar();
 
-// INICIAR ACTIVIDAD
+// INICIAR TAREA
 window.iniciar = async () => {
 
   const ahora = new Date().toISOString();
+
+  // CAMBIAR BOTÓN
+  btnIniciar.disabled = true;
 
   await updateDoc(doc(db, "actividades", actId), {
 
@@ -251,9 +265,13 @@ window.iniciar = async () => {
 
     fechaInicio: ahora,
 
-    progreso: 0
+    progreso: 0,
+
+    tiempoTranscurrido: 0
 
   });
+
+  iniciarContador();
 
   alert("Actividad iniciada");
 
@@ -261,18 +279,23 @@ window.iniciar = async () => {
 
 };
 
-// CONTADOR EN TIEMPO REAL
+// CONTADOR
 function iniciarContador() {
 
-  if (intervalo) clearInterval(intervalo);
+  if (intervalo) {
+    clearInterval(intervalo);
+  }
 
   intervalo = setInterval(async () => {
 
-    const inicio = new Date(actividadData.fechaInicio).getTime();
+    const inicio =
+      new Date(actividadData.fechaInicio).getTime();
 
-    const ahora = new Date().getTime();
+    const ahora =
+      new Date().getTime();
 
-    const transcurrido = (ahora - inicio) / 1000;
+    const transcurrido =
+      Math.floor((ahora - inicio) / 1000);
 
     const duracionSegundos =
       (actividadData.duracionHoras || 2) * 3600;
@@ -280,30 +303,42 @@ function iniciarContador() {
     let porcentaje =
       Math.floor((transcurrido / duracionSegundos) * 100);
 
-    if (porcentaje > 100) porcentaje = 100;
+    if (porcentaje > 100) {
+      porcentaje = 100;
+    }
 
     barra.style.width = porcentaje + "%";
 
     textoProgreso.innerHTML =
       porcentaje + "% completado";
 
-    // GUARDAR PROGRESO EN FIREBASE
+    // GUARDAR PROGRESO
     await updateDoc(doc(db, "actividades", actId), {
-      progreso: porcentaje
+
+      progreso: porcentaje,
+
+      tiempoTranscurrido: transcurrido
+
     });
 
     if (porcentaje >= 100) {
+
       clearInterval(intervalo);
+
     }
 
   }, 1000);
 
 }
 
-// FINALIZAR ACTIVIDAD
+// FINALIZAR
 window.finalizar = async () => {
 
-  const horas = actividadData.duracionHoras || 2;
+  // DETENER CONTADOR
+  clearInterval(intervalo);
+
+  const horas =
+    actividadData.duracionHoras || 2;
 
   // FINALIZAR ACTIVIDAD
   await updateDoc(doc(db, "actividades", actId), {
@@ -316,7 +351,7 @@ window.finalizar = async () => {
 
   });
 
-  // SUMAR HORAS AL USUARIO
+  // SUMAR HORAS Y ACTIVIDADES
   if (actividadData.usuarioId) {
 
     await updateDoc(
@@ -325,25 +360,30 @@ window.finalizar = async () => {
 
         horasHoy: increment(horas),
 
-        actividadesHoy: increment(1)
+        actividadesHoy: increment(1),
+
+        ultimoProgreso:
+          actividadData.progreso || 100
 
       }
     );
 
   }
 
-  alert("Actividad finalizada");
-
   barra.style.width = "100%";
 
   textoProgreso.innerHTML =
     "Actividad completada";
 
+  btnFinalizar.disabled = true;
+
+  alert("Actividad finalizada");
+
   cargar();
 
 };
 
-// REPORTAR PROBLEMA
+// PROBLEMA
 window.reportarProblema = () => {
 
   window.location.href =
