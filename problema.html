@@ -5,65 +5,67 @@
 <title>Resolver Problema</title>
 
 <style>
-body {
-  font-family: Arial;
-  background: #f4f6f9;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 100vh;
+
+body{
+  font-family:Arial;
+  background:#f4f6f9;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  min-height:100vh;
 }
 
-.container {
-  background: white;
-  padding: 25px;
-  border-radius: 15px;
-  width: 400px;
-  box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+.container{
+  background:white;
+  padding:25px;
+  border-radius:15px;
+  width:400px;
+  box-shadow:0 5px 15px rgba(0,0,0,0.1);
 }
 
-h2 {
-  text-align: center;
+h2{
+  text-align:center;
 }
 
 select,
 button,
-textarea {
-  width: 100%;
-  padding: 10px;
-  margin-top: 10px;
-  box-sizing: border-box;
+textarea{
+  width:100%;
+  padding:10px;
+  margin-top:10px;
+  box-sizing:border-box;
 }
 
-textarea {
-  resize: none;
-  height: 100px;
+textarea{
+  resize:none;
+  height:100px;
 }
 
-#recursos {
-  margin-top: 10px;
+#recursos{
+  margin-top:10px;
 }
 
-.info {
-  margin-top: 15px;
-  background: #f7f7f7;
-  padding: 10px;
-  border-radius: 8px;
-  font-size: 14px;
+.info{
+  margin-top:15px;
+  background:#f7f7f7;
+  padding:10px;
+  border-radius:8px;
+  font-size:14px;
 }
 
-button {
-  background: #2ecc71;
-  border: none;
-  color: white;
-  border-radius: 8px;
-  cursor: pointer;
-  font-weight: bold;
+button{
+  background:#2ecc71;
+  border:none;
+  color:white;
+  border-radius:8px;
+  cursor:pointer;
+  font-weight:bold;
 }
 
-button:hover {
-  background: #27ae60;
+button:hover{
+  background:#27ae60;
 }
+
 </style>
 </head>
 
@@ -129,11 +131,8 @@ import {
 from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
 
 
-// EMAILJS
-emailjs.init("ef-dBrhYWH_SJjX7x");
+// ================= FIREBASE =================
 
-
-// FIREBASE
 const app = initializeApp({
 
   apiKey: "TU_API_KEY",
@@ -147,7 +146,17 @@ const app = initializeApp({
 const db = getFirestore(app);
 
 
-// PARAMS
+// ================= EMAILJS =================
+
+emailjs.init({
+
+  publicKey: "ef-dBrhYWH_SJjX7x"
+
+});
+
+
+// ================= PARAMS =================
+
 const params =
   new URLSearchParams(window.location.search);
 
@@ -155,7 +164,8 @@ const actId =
   params.get("actId");
 
 
-// ELEMENTOS
+// ================= ELEMENTOS =================
+
 const tipoSelect =
   document.getElementById("tipo");
 
@@ -167,30 +177,42 @@ let actividad = null;
 let recursosDisponibles = [];
 
 
-// CARGAR ACTIVIDAD
+// ================= CARGAR ACTIVIDAD =================
+
 async function cargar() {
 
-  const snap =
-    await getDoc(
-      doc(db, "actividades", actId)
-    );
+  try {
 
-  if (!snap.exists()) {
+    const snap =
+      await getDoc(
+        doc(db, "actividades", actId)
+      );
 
-    alert("Actividad no encontrada");
+    if (!snap.exists()) {
 
-    return;
+      alert("Actividad no encontrada");
+
+      return;
+
+    }
+
+    actividad = snap.data();
+
+  } catch(error) {
+
+    console.error(error);
+
+    alert("Error cargando actividad");
 
   }
-
-  actividad = snap.data();
 
 }
 
 cargar();
 
 
-// CAMBIO DE PROBLEMA
+// ================= CAMBIO DE PROBLEMA =================
+
 tipoSelect.addEventListener(
   "change",
 
@@ -204,61 +226,71 @@ tipoSelect.addEventListener(
       "falta_recurso"
     ) {
 
-      const snap =
-        await getDocs(
-          collection(db, "recursos")
-        );
+      try {
 
-      recursosDisponibles =
-        snap.docs
+        const snap =
+          await getDocs(
+            collection(db, "recursos")
+          );
 
-        .map(d => ({
-          id: d.id,
-          ...d.data()
-        }))
+        recursosDisponibles =
+          snap.docs
 
-        .filter(r =>
+          .map(d => ({
+            id:d.id,
+            ...d.data()
+          }))
 
-          r.zona === actividad.zona &&
+          .filter(r =>
 
-          r.estado === "disponible" &&
+            r.zona === actividad.zona &&
 
-          r.tipo === actividad.tipo
+            r.estado === "disponible" &&
 
-        );
+            r.tipo === actividad.tipo
 
-      if (
-        recursosDisponibles.length === 0
-      ) {
+          );
 
-        contRecursos.innerHTML =
-          "No hay recursos disponibles";
+        if (
+          recursosDisponibles.length === 0
+        ) {
 
-        return;
+          contRecursos.innerHTML =
+            "No hay recursos disponibles";
+
+          return;
+
+        }
+
+        let html =
+          "<label>Selecciona recurso:</label>";
+
+        html +=
+          "<select id='recurso'>";
+
+        recursosDisponibles.forEach(r => {
+
+          html += `
+
+            <option value="${r.id}">
+              ${r.nombre}
+            </option>
+
+          `;
+
+        });
+
+        html += "</select>";
+
+        contRecursos.innerHTML = html;
+
+      } catch(error) {
+
+        console.error(error);
+
+        alert("Error cargando recursos");
 
       }
-
-      let html =
-        "<label>Selecciona recurso:</label>";
-
-      html +=
-        "<select id='recurso'>";
-
-      recursosDisponibles.forEach(r => {
-
-        html += `
-
-          <option value="${r.id}">
-            ${r.nombre}
-          </option>
-
-        `;
-
-      });
-
-      html += "</select>";
-
-      contRecursos.innerHTML = html;
 
     }
 
@@ -267,7 +299,8 @@ tipoSelect.addEventListener(
 );
 
 
-// RESOLVER
+// ================= RESOLVER =================
+
 window.resolver = async () => {
 
   const tipo =
@@ -287,7 +320,10 @@ window.resolver = async () => {
 
   }
 
+  // =========================================
   // FINALIZÓ POR ERROR
+  // =========================================
+
   if (
     tipo === "error_finalizar"
   ) {
@@ -329,33 +365,38 @@ window.resolver = async () => {
 
       );
 
-
       // ENVIAR CORREO
-      await emailjs.send(
+      const response =
+        await emailjs.send(
 
-        "service_1uiukzg",
+          "service_1uiukzg",
 
-        "template_reapertura",
+          "template_reapertura",
 
-        {
+          {
 
-          trabajador:
-            actividad.trabajador,
+            trabajador:
+              actividad.trabajador,
 
-          actividad:
-            actividad.nombre,
+            actividad:
+              actividad.nombre,
 
-          zona:
-            actividad.zona,
+            zona:
+              actividad.zona,
 
-          descripcion:
-            descripcion,
+            descripcion:
+              descripcion,
 
-          actividadId:
-            actId
+            actividadId:
+              actId
 
-        }
+          }
 
+        );
+
+      console.log(
+        "Correo enviado:",
+        response
       );
 
       alert(
@@ -365,9 +406,12 @@ window.resolver = async () => {
       window.location.href =
         "index.html";
 
-    } catch (error) {
+    } catch(error) {
 
-      console.error(error);
+      console.error(
+        "ERROR EMAILJS:",
+        error
+      );
 
       alert(
         "Error al enviar correo"
@@ -377,83 +421,99 @@ window.resolver = async () => {
 
   }
 
+
+  // =========================================
   // FALTA DE RECURSO
+  // =========================================
+
   if (
     tipo === "falta_recurso"
   ) {
 
-    const recursoId =
+    try {
 
-      document
-        .getElementById("recurso")
-        ?.value;
+      const recursoId =
 
-    if (!recursoId) {
+        document
+          .getElementById("recurso")
+          ?.value;
+
+      if (!recursoId) {
+
+        alert(
+          "Selecciona un recurso"
+        );
+
+        return;
+
+      }
+
+      const recurso =
+
+        recursosDisponibles.find(
+          r => r.id === recursoId
+        );
+
+      // ACTUALIZAR ACTIVIDAD
+      await updateDoc(
+
+        doc(
+          db,
+          "actividades",
+          actId
+        ),
+
+        {
+
+          recursoAsignado:
+            recurso.nombre,
+
+          recursoId:
+            recurso.id,
+
+          estado:
+            "en_proceso"
+
+        }
+
+      );
+
+      // RECURSO EN USO
+      await updateDoc(
+
+        doc(
+          db,
+          "recursos",
+          recurso.id
+        ),
+
+        {
+
+          estado:
+            "en_uso",
+
+          asignadoA:
+            actividad.trabajador
+
+        }
+
+      );
 
       alert(
-        "Selecciona un recurso"
+        "Recurso asignado correctamente"
       );
 
-      return;
+      window.history.back();
+
+    } catch(error) {
+
+      console.error(error);
+
+      alert(
+        "Error asignando recurso"
+      );
 
     }
-
-    const recurso =
-
-      recursosDisponibles.find(
-        r => r.id === recursoId
-      );
-
-    // ACTUALIZAR ACTIVIDAD
-    await updateDoc(
-
-      doc(
-        db,
-        "actividades",
-        actId
-      ),
-
-      {
-
-        recursoAsignado:
-          recurso.nombre,
-
-        recursoId:
-          recurso.id,
-
-        estado:
-          "en_proceso"
-
-      }
-
-    );
-
-    // RECURSO EN USO
-    await updateDoc(
-
-      doc(
-        db,
-        "recursos",
-        recurso.id
-      ),
-
-      {
-
-        estado:
-          "en_uso",
-
-        asignadoA:
-          actividad.trabajador
-
-      }
-
-    );
-
-    alert(
-      "Recurso asignado correctamente"
-    );
-
-    window.history.back();
 
   }
 
