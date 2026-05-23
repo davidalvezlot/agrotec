@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>Resolver Problema</title>
+<title>Prueba EmailJS</title>
 
 <style>
 
@@ -12,58 +12,32 @@ body{
   display:flex;
   justify-content:center;
   align-items:center;
-  min-height:100vh;
+  height:100vh;
 }
 
 .container{
   background:white;
-  padding:25px;
+  padding:30px;
   border-radius:15px;
-  width:400px;
+  width:350px;
+  text-align:center;
   box-shadow:0 5px 15px rgba(0,0,0,0.1);
 }
 
-h2{
-  text-align:center;
-}
-
-select,
-button,
-textarea{
-  width:100%;
-  padding:10px;
-  margin-top:10px;
-  box-sizing:border-box;
-}
-
-textarea{
-  resize:none;
-  height:100px;
-}
-
 button{
-  background:#2ecc71;
-  color:white;
+  width:100%;
+  padding:12px;
   border:none;
-  border-radius:8px;
+  border-radius:10px;
+  background:#3498db;
+  color:white;
+  font-size:16px;
   font-weight:bold;
   cursor:pointer;
 }
 
 button:hover{
-  background:#27ae60;
-}
-
-.info{
-  margin-top:15px;
-  background:#f7f7f7;
-  padding:10px;
-  border-radius:8px;
-  font-size:14px;
-}
-
-#recursos{
-  margin-top:10px;
+  background:#2980b9;
 }
 
 </style>
@@ -73,55 +47,25 @@ button:hover{
 
 <div class="container">
 
-  <h2>Resolver problema</h2>
+  <h2>Prueba EmailJS</h2>
 
-  <select id="tipo">
-
-    <option value="">
-      Selecciona problema
-    </option>
-
-    <option value="error_finalizar">
-      Finalicé por error
-    </option>
-
-    <option value="falta_recurso">
-      No había recurso
-    </option>
-
-  </select>
-
-  <div id="recursos"></div>
-
-  <textarea
-    id="descripcion"
-    placeholder="Describe el problema">
-  </textarea>
-
- <button onclick="resolver()">
-Enviar prueba
-</button>
-
-  <div class="info">
-
-    Si la actividad fue finalizada por error,
-    se enviará automáticamente un correo
-    al administrador.
-
-  </div>
+  <button onclick="enviarCorreo()">
+    Enviar correo de prueba
+  </button>
 
 </div>
 
 <!-- EMAILJS -->
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 
-<script type="module">
+<script>
 
-
-
+// INICIALIZAR EMAILJS
 emailjs.init("1xgXkmn1R5msn0Tmo");
 
-async function resolver(){
+
+// ENVIAR CORREO
+async function enviarCorreo(){
 
   try{
 
@@ -135,13 +79,13 @@ async function resolver(){
 
         trabajador:"David",
 
-        actividad:"Prueba",
+        actividad:"Actividad de prueba",
 
         zona:"Zona A",
 
-        descripcion:"Correo de prueba",
+        descripcion:"Este es un correo de prueba enviado desde GitHub Pages",
 
-        actividadId:"123"
+        actividadId:"12345"
 
       }
 
@@ -154,14 +98,13 @@ async function resolver(){
   }
   catch(error){
 
-    console.log(error);
+    console.error(error);
 
     alert(JSON.stringify(error));
 
   }
 
 }
-
 
 </script>
 
