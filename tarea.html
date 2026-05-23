@@ -39,7 +39,7 @@ h2 {
   background: orange;
 }
 
-.disponible {
+.asignada {
   background: gray;
 }
 
@@ -119,7 +119,6 @@ button:disabled {
 
   <div class="card" id="info"></div>
 
-  <!-- BARRA -->
   <div class="progreso-box">
 
     <div class="barra">
@@ -132,7 +131,6 @@ button:disabled {
 
   </div>
 
-  <!-- BOTÓN INICIAR -->
   <button
     class="iniciar"
     id="btnIniciar"
@@ -142,7 +140,6 @@ button:disabled {
 
   </button>
 
-  <!-- BOTÓN FINALIZAR -->
   <button
     class="finalizar"
     id="btnFinalizar"
@@ -152,7 +149,6 @@ button:disabled {
 
   </button>
 
-  <!-- BOTÓN PROBLEMA -->
   <button
     class="problema"
     onclick="reportarProblema()">
@@ -279,7 +275,7 @@ async function cargar() {
 
   `;
 
-  // SI YA FINALIZÓ
+  // FINALIZADA
   if (
     actividadData.estado === "finalizada"
   ) {
@@ -297,9 +293,10 @@ async function cargar() {
 
   }
 
-  // ACTIVIDAD ASIGNADA
-  // EL BOTÓN INICIAR DEBE ESTAR AZUL
-  if (!actividadData.iniciada) {
+  // ASIGNADA
+  if (
+    actividadData.estado === "asignada"
+  ) {
 
     btnIniciar.disabled = false;
 
@@ -312,8 +309,10 @@ async function cargar() {
 
   }
 
-  // ACTIVIDAD YA INICIADA
-  if (actividadData.iniciada) {
+  // EN PROCESO
+  if (
+    actividadData.estado === "en_proceso"
+  ) {
 
     btnIniciar.disabled = true;
 
@@ -417,14 +416,12 @@ function iniciarContador() {
 
     }
 
-    // BARRA
     barra.style.width =
       porcentaje + "%";
 
     textoProgreso.innerHTML =
       porcentaje + "% completado";
 
-    // GUARDAR PROGRESO
     await updateDoc(
       doc(db, "actividades", actId),
       {
@@ -437,7 +434,6 @@ function iniciarContador() {
       }
     );
 
-    // TERMINAR CONTADOR
     if (porcentaje >= 100) {
 
       clearInterval(intervalo);
@@ -452,8 +448,10 @@ function iniciarContador() {
 // FINALIZAR
 window.finalizar = async () => {
 
-  // VALIDAR
-  if (!actividadData.iniciada) {
+  if (
+    actividadData.estado !==
+    "en_proceso"
+  ) {
 
     alert(
       "Primero debes iniciar la tarea"
