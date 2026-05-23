@@ -35,9 +35,17 @@ h2 {
   margin-top: 10px;
 }
 
-.en_proceso { background: orange; }
-.disponible { background: gray; }
-.finalizada { background: green; }
+.en_proceso {
+  background: orange;
+}
+
+.disponible {
+  background: gray;
+}
+
+.finalizada {
+  background: green;
+}
 
 .card {
   margin-top: 20px;
@@ -125,24 +133,32 @@ button:disabled {
   </div>
 
   <!-- BOTÓN INICIAR -->
-  <button class="iniciar"
-          id="btnIniciar"
-          onclick="iniciar()">
+  <button
+    class="iniciar"
+    id="btnIniciar"
+    onclick="iniciar()">
+
     Iniciar tarea
+
   </button>
 
   <!-- BOTÓN FINALIZAR -->
-  <button class="finalizar"
-          id="btnFinalizar"
-          onclick="finalizar()"
-          disabled>
+  <button
+    class="finalizar"
+    id="btnFinalizar"
+    onclick="finalizar()">
+
     Finalizar tarea
+
   </button>
 
   <!-- BOTÓN PROBLEMA -->
-  <button class="problema"
-          onclick="reportarProblema()">
+  <button
+    class="problema"
+    onclick="reportarProblema()">
+
     Hubo algún problema
+
   </button>
 
 </div>
@@ -179,8 +195,11 @@ const actId = params.get("actId");
 const nombre = params.get("nombre");
 
 // ELEMENTOS
-const info = document.getElementById("info");
-const saludo = document.getElementById("saludo");
+const info =
+  document.getElementById("info");
+
+const saludo =
+  document.getElementById("saludo");
 
 const barra =
   document.getElementById("barraProgreso");
@@ -248,7 +267,10 @@ async function cargar() {
 
     <p>
       <strong>Inicio:</strong>
-      ${actividadData.fechaInicio || "Pendiente"}
+      ${
+        actividadData.fechaInicio ||
+        "Pendiente"
+      }
     </p>
 
     <div class="estado ${estadoClase}">
@@ -264,7 +286,7 @@ async function cargar() {
 
     btnIniciar.disabled = false;
 
-    btnFinalizar.disabled = true;
+    btnFinalizar.disabled = false;
 
     barra.style.width = "0%";
 
@@ -306,20 +328,19 @@ async function cargar() {
 
 cargar();
 
-
 // INICIAR ACTIVIDAD
 window.iniciar = async () => {
 
   const ahora =
     new Date().toISOString();
 
-  // BOTÓN AZUL -> GRIS
+  // DESACTIVAR INICIAR
   btnIniciar.disabled = true;
 
   // ACTIVAR FINALIZAR
   btnFinalizar.disabled = false;
 
-  // GUARDAR EN FIREBASE
+  // GUARDAR
   await updateDoc(
     doc(db, "actividades", actId),
     {
@@ -335,10 +356,12 @@ window.iniciar = async () => {
     }
   );
 
-  // ACTUALIZAR DATOS
-  actividadData.estado = "en_proceso";
+  // ACTUALIZAR LOCAL
+  actividadData.estado =
+    "en_proceso";
 
-  actividadData.fechaInicio = ahora;
+  actividadData.fechaInicio =
+    ahora;
 
   actividadData.progreso = 0;
 
@@ -348,7 +371,6 @@ window.iniciar = async () => {
   alert("Actividad iniciada");
 
 };
-
 
 // CONTADOR
 function iniciarContador() {
@@ -380,8 +402,10 @@ function iniciarContador() {
 
     let porcentaje =
       Math.floor(
-        (transcurrido / duracionSegundos)
-        * 100
+        (
+          transcurrido /
+          duracionSegundos
+        ) * 100
       );
 
     if (porcentaje > 100) {
@@ -404,7 +428,8 @@ function iniciarContador() {
 
         progreso: porcentaje,
 
-        tiempoTranscurrido: transcurrido
+        tiempoTranscurrido:
+          transcurrido
 
       }
     );
@@ -420,9 +445,22 @@ function iniciarContador() {
 
 }
 
-
 // FINALIZAR
 window.finalizar = async () => {
+
+  // VALIDAR
+  if (
+    actividadData.estado !==
+    "en_proceso"
+  ) {
+
+    alert(
+      "Primero debes iniciar la tarea"
+    );
+
+    return;
+
+  }
 
   clearInterval(intervalo);
 
@@ -444,7 +482,7 @@ window.finalizar = async () => {
     }
   );
 
-  // SUMAR PROGRESO
+  // SUMAR HORAS
   if (actividadData.usuarioId) {
 
     await updateDoc(
@@ -511,13 +549,12 @@ window.finalizar = async () => {
 
 };
 
-
 // REPORTAR PROBLEMA
 window.reportarProblema = () => {
 
   window.location.href =
 
-    `problema.html?actId=${actId}&nombre=${nombre}`;
+  `problema.html?actId=${actId}&nombre=${nombre}`;
 
 };
 
