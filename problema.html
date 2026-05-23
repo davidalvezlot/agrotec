@@ -2,44 +2,68 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>Prueba EmailJS</title>
+<title>Resolver Problema</title>
 
 <style>
-
-body{
-  font-family:Arial;
-  background:#f4f6f9;
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  height:100vh;
+body {
+  font-family: Arial;
+  background: #f4f6f9;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
 }
 
-.container{
-  background:white;
-  padding:30px;
-  border-radius:15px;
-  width:350px;
-  text-align:center;
-  box-shadow:0 5px 15px rgba(0,0,0,0.1);
+.container {
+  background: white;
+  padding: 25px;
+  border-radius: 15px;
+  width: 400px;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.1);
 }
 
-button{
-  width:100%;
-  padding:12px;
-  border:none;
-  border-radius:10px;
-  background:#3498db;
-  color:white;
-  font-size:16px;
-  font-weight:bold;
-  cursor:pointer;
+h2 {
+  text-align: center;
 }
 
-button:hover{
-  background:#2980b9;
+select,
+button,
+textarea {
+  width: 100%;
+  padding: 10px;
+  margin-top: 10px;
+  box-sizing: border-box;
 }
 
+textarea {
+  resize: none;
+  height: 100px;
+}
+
+#recursos {
+  margin-top: 10px;
+}
+
+.info {
+  margin-top: 15px;
+  background: #f7f7f7;
+  padding: 10px;
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+button {
+  background: #2ecc71;
+  border: none;
+  color: white;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+button:hover {
+  background: #27ae60;
+}
 </style>
 </head>
 
@@ -47,64 +71,393 @@ button:hover{
 
 <div class="container">
 
-  <h2>Prueba EmailJS</h2>
+  <h2>Resolver problema</h2>
 
-  <button onclick="enviarCorreo()">
-    Enviar correo de prueba
+  <select id="tipo">
+
+    <option value="">
+      Selecciona problema
+    </option>
+
+    <option value="error_finalizar">
+      Finalicé por error
+    </option>
+
+    <option value="falta_recurso">
+      No había recurso
+    </option>
+
+  </select>
+
+  <div id="recursos"></div>
+
+  <textarea
+    id="descripcion"
+    placeholder="Describe el problema">
+  </textarea>
+
+  <button onclick="resolver()">
+    Resolver
   </button>
+
+  <div class="info">
+
+    En caso de reapertura de actividad,
+    el administrador deberá autorizarla.
+
+  </div>
 
 </div>
 
 <!-- EMAILJS -->
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 
-<script>
+<script type="module">
 
-// INICIALIZAR EMAILJS
+import { initializeApp }
+from "https://www.gstatic.com/firebasejs/12.12.1/firebase-app.js";
+
+import {
+  getFirestore,
+  doc,
+  getDoc,
+  updateDoc,
+  collection,
+  getDocs,
+  addDoc
+}
+from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
+
+
+// EMAILJS
 emailjs.init("1xgXkmn1R5msn0Tmo");
 
 
-// ENVIAR CORREO
-async function enviarCorreo(){
+// FIREBASE
+const app = initializeApp({
 
-  try{
+  apiKey: "TU_API_KEY",
 
-    const response = await emailjs.send(
+  authDomain: "agrotecdb.firebaseapp.com",
 
-      "service_1uiukzg",
+  projectId: "agrotecdb"
 
-      "template_4rr3rb8",
+});
+
+const db = getFirestore(app);
+
+
+// PARAMS
+const params =
+  new URLSearchParams(window.location.search);
+
+const actId =
+  params.get("actId");
+
+
+// ELEMENTOS
+const tipoSelect =
+  document.getElementById("tipo");
+
+const contRecursos =
+  document.getElementById("recursos");
+
+let actividad = null;
+
+let recursosDisponibles = [];
+
+
+// CARGAR ACTIVIDAD
+async function cargar() {
+
+  const snap =
+    await getDoc(
+      doc(db, "actividades", actId)
+    );
+
+  if (!snap.exists()) {
+
+    alert("Actividad no encontrada");
+
+    return;
+
+  }
+
+  actividad = snap.data();
+
+}
+
+cargar();
+
+
+// CAMBIO DE PROBLEMA
+tipoSelect.addEventListener(
+  "change",
+
+  async () => {
+
+    contRecursos.innerHTML = "";
+
+    // FALTA RECURSO
+    if (
+      tipoSelect.value ===
+      "falta_recurso"
+    ) {
+
+      const snap =
+        await getDocs(
+          collection(db, "recursos")
+        );
+
+      recursosDisponibles =
+        snap.docs
+
+        .map(d => ({
+          id: d.id,
+          ...d.data()
+        }))
+
+        .filter(r =>
+
+          r.zona === actividad.zona &&
+
+          r.estado === "disponible" &&
+
+          r.tipo === actividad.tipo
+
+        );
+
+      if (
+        recursosDisponibles.length === 0
+      ) {
+
+        contRecursos.innerHTML =
+          "No hay recursos disponibles";
+
+        return;
+
+      }
+
+      let html =
+        "<label>Selecciona recurso:</label>";
+
+      html +=
+        "<select id='recurso'>";
+
+      recursosDisponibles.forEach(r => {
+
+        html += `
+
+          <option value="${r.id}">
+            ${r.nombre}
+          </option>
+
+        `;
+
+      });
+
+      html += "</select>";
+
+      contRecursos.innerHTML = html;
+
+    }
+
+  }
+
+);
+
+
+// RESOLVER
+window.resolver = async () => {
+
+  const tipo =
+    tipoSelect.value;
+
+  const descripcion =
+    document
+      .getElementById("descripcion")
+      .value
+      .trim();
+
+  if (!tipo) {
+
+    alert("Selecciona un problema");
+
+    return;
+
+  }
+
+  // FINALIZÓ POR ERROR
+  if (
+    tipo === "error_finalizar"
+  ) {
+
+    try {
+
+      // GUARDAR SOLICITUD
+      await addDoc(
+
+        collection(
+          db,
+          "solicitudesReapertura"
+        ),
+
+        {
+
+          actividadId:
+            actId,
+
+          actividad:
+            actividad.nombre,
+
+          trabajador:
+            actividad.trabajador,
+
+          zona:
+            actividad.zona,
+
+          descripcion:
+            descripcion,
+
+          estado:
+            "pendiente",
+
+          fecha:
+            new Date().toISOString()
+
+        }
+
+      );
+
+
+      // ENVIAR CORREO
+      await emailjs.send(
+
+        "service_1uiukzg",
+
+        "template_4rr3rb8",
+
+        {
+
+          trabajador:
+            actividad.trabajador,
+
+          actividad:
+            actividad.nombre,
+
+          zona:
+            actividad.zona,
+
+          descripcion:
+            descripcion,
+
+          actividadId:
+            actId
+
+        }
+
+      );
+
+      alert(
+        "Solicitud enviada correctamente"
+      );
+
+      window.location.href =
+        "index.html";
+
+    } catch (error) {
+
+      console.error(error);
+
+      alert(
+        "Error al enviar correo"
+      );
+
+    }
+
+  }
+
+  // FALTA DE RECURSO
+  if (
+    tipo === "falta_recurso"
+  ) {
+
+    const recursoId =
+
+      document
+        .getElementById("recurso")
+        ?.value;
+
+    if (!recursoId) {
+
+      alert(
+        "Selecciona un recurso"
+      );
+
+      return;
+
+    }
+
+    const recurso =
+
+      recursosDisponibles.find(
+        r => r.id === recursoId
+      );
+
+    // ACTUALIZAR ACTIVIDAD
+    await updateDoc(
+
+      doc(
+        db,
+        "actividades",
+        actId
+      ),
 
       {
 
-        trabajador:"David",
+        recursoAsignado:
+          recurso.nombre,
 
-        actividad:"Actividad de prueba",
+        recursoId:
+          recurso.id,
 
-        zona:"Zona A",
-
-        descripcion:"Este es un correo de prueba enviado desde GitHub Pages",
-
-        actividadId:"12345"
+        estado:
+          "en_proceso"
 
       }
 
     );
 
-    console.log(response);
+    // RECURSO EN USO
+    await updateDoc(
 
-    alert("Correo enviado correctamente");
+      doc(
+        db,
+        "recursos",
+        recurso.id
+      ),
+
+      {
+
+        estado:
+          "en_uso",
+
+        asignadoA:
+          actividad.trabajador
+
+      }
+
+    );
+
+    alert(
+      "Recurso asignado correctamente"
+    );
+
+    window.history.back();
 
   }
-  catch(error){
 
-    console.error(error);
-
-    alert(JSON.stringify(error));
-
-  }
-
-}
+};
 
 </script>
 
