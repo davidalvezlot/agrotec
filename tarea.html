@@ -279,36 +279,7 @@ async function cargar() {
 
   `;
 
-  // ACTIVIDAD DISPONIBLE
-  if (
-    actividadData.estado === "disponible"
-  ) {
-
-    btnIniciar.disabled = false;
-
-    btnFinalizar.disabled = false;
-
-    barra.style.width = "0%";
-
-    textoProgreso.innerHTML =
-      "Esperando inicio";
-
-  }
-
-  // ACTIVIDAD EN PROCESO
-  if (
-    actividadData.estado === "en_proceso"
-  ) {
-
-    btnIniciar.disabled = true;
-
-    btnFinalizar.disabled = false;
-
-    iniciarContador();
-
-  }
-
-  // ACTIVIDAD FINALIZADA
+  // SI YA FINALIZÓ
   if (
     actividadData.estado === "finalizada"
   ) {
@@ -322,11 +293,40 @@ async function cargar() {
     textoProgreso.innerHTML =
       "Actividad completada";
 
+    return;
+
+  }
+
+  // ACTIVIDAD ASIGNADA
+  // EL BOTÓN INICIAR DEBE ESTAR AZUL
+  if (!actividadData.iniciada) {
+
+    btnIniciar.disabled = false;
+
+    btnFinalizar.disabled = true;
+
+    barra.style.width = "0%";
+
+    textoProgreso.innerHTML =
+      "Esperando inicio";
+
+  }
+
+  // ACTIVIDAD YA INICIADA
+  if (actividadData.iniciada) {
+
+    btnIniciar.disabled = true;
+
+    btnFinalizar.disabled = false;
+
+    iniciarContador();
+
   }
 
 }
 
 cargar();
+
 
 // INICIAR ACTIVIDAD
 window.iniciar = async () => {
@@ -334,7 +334,7 @@ window.iniciar = async () => {
   const ahora =
     new Date().toISOString();
 
-  // DESACTIVAR INICIAR
+  // BOTÓN AZUL -> GRIS
   btnIniciar.disabled = true;
 
   // ACTIVAR FINALIZAR
@@ -344,6 +344,8 @@ window.iniciar = async () => {
   await updateDoc(
     doc(db, "actividades", actId),
     {
+
+      iniciada: true,
 
       estado: "en_proceso",
 
@@ -357,11 +359,11 @@ window.iniciar = async () => {
   );
 
   // ACTUALIZAR LOCAL
-  actividadData.estado =
-    "en_proceso";
+  actividadData.iniciada = true;
 
-  actividadData.fechaInicio =
-    ahora;
+  actividadData.estado = "en_proceso";
+
+  actividadData.fechaInicio = ahora;
 
   actividadData.progreso = 0;
 
@@ -371,6 +373,7 @@ window.iniciar = async () => {
   alert("Actividad iniciada");
 
 };
+
 
 // CONTADOR
 function iniciarContador() {
@@ -414,7 +417,7 @@ function iniciarContador() {
 
     }
 
-    // ACTUALIZAR BARRA
+    // BARRA
     barra.style.width =
       porcentaje + "%";
 
@@ -434,7 +437,7 @@ function iniciarContador() {
       }
     );
 
-    // SI TERMINA
+    // TERMINAR CONTADOR
     if (porcentaje >= 100) {
 
       clearInterval(intervalo);
@@ -445,14 +448,12 @@ function iniciarContador() {
 
 }
 
+
 // FINALIZAR
 window.finalizar = async () => {
 
   // VALIDAR
-  if (
-    actividadData.estado !==
-    "en_proceso"
-  ) {
+  if (!actividadData.iniciada) {
 
     alert(
       "Primero debes iniciar la tarea"
@@ -467,7 +468,7 @@ window.finalizar = async () => {
   const horas =
     actividadData.duracionHoras || 2;
 
-  // FINALIZAR ACTIVIDAD
+  // FINALIZAR
   await updateDoc(
     doc(db, "actividades", actId),
     {
@@ -548,6 +549,7 @@ window.finalizar = async () => {
   cargar();
 
 };
+
 
 // REPORTAR PROBLEMA
 window.reportarProblema = () => {
