@@ -434,6 +434,7 @@ async function cargar(){
 
   `;
 
+  // FINALIZADA
   if(
     actividadData.estado ===
     "finalizada"
@@ -457,6 +458,7 @@ async function cargar(){
 
   }
 
+  // EN PROCESO
   if(
     actividadData.iniciada === true
   ){
@@ -591,6 +593,7 @@ function iniciarContador(){
 
     }
 
+    // ACTUALIZAR BARRA
     barra.style.width =
     porcentaje + "%";
 
@@ -599,6 +602,7 @@ function iniciarContador(){
     porcentaje +
     "% completado";
 
+    // GUARDAR PROGRESO
     await updateDoc(
 
       doc(
@@ -618,6 +622,7 @@ function iniciarContador(){
 
     );
 
+    // ACTUALIZAR USUARIO
     if(actividadData.usuarioId){
 
       await updateDoc(
@@ -645,9 +650,126 @@ function iniciarContador(){
 
     }
 
+    /* =========================
+       FINALIZAR AUTOMATICO
+    ========================= */
+
     if(porcentaje >= 100){
 
       clearInterval(intervalo);
+
+      const horasReales =
+
+      (
+        transcurrido / 3600
+      ).toFixed(2);
+
+      // FINALIZAR ACTIVIDAD
+      await updateDoc(
+
+        doc(
+          db,
+          "actividades",
+          actId
+        ),
+
+        {
+
+          estado:"finalizada",
+
+          iniciada:false,
+
+          fechaFin:
+          new Date().toISOString(),
+
+          progreso:100,
+
+          tiempoTranscurrido:
+          transcurrido,
+
+          horasReales:
+          Number(horasReales)
+
+        }
+
+      );
+
+      // ACTUALIZAR USUARIO
+      if(actividadData.usuarioId){
+
+        await updateDoc(
+
+          doc(
+            db,
+            "usuarios",
+            actividadData.usuarioId
+          ),
+
+          {
+
+            horasHoy:
+            increment(
+              Number(horasReales)
+            ),
+
+            actividadesHoy:
+            increment(1),
+
+            ultimoProgreso:100,
+
+            progresoActual:100,
+
+            estadoActividad:
+            "Finalizada",
+
+            actividadActual:
+            actividadData.nombre
+
+          }
+
+        );
+
+      }
+
+      // LIBERAR RECURSO
+      if(actividadData.recursoId){
+
+        await updateDoc(
+
+          doc(
+            db,
+            "recursos",
+            actividadData.recursoId
+          ),
+
+          {
+
+            estado:"disponible",
+
+            asignadoA:"",
+
+            nombreAsignado:"",
+
+            rolAsignado:""
+
+          }
+
+        );
+
+      }
+
+      // INTERFAZ
+      barra.style.width =
+      "100%";
+
+      textoProgreso.innerHTML =
+      "100% completado";
+
+      btnFinalizar.disabled = true;
+
+      alert(
+        "Actividad completada automáticamente"
+      );
 
     }
 
@@ -657,7 +779,7 @@ function iniciarContador(){
 
 
 /* =========================
-   FINALIZAR
+   FINALIZAR MANUAL
 ========================= */
 
 window.finalizar = async()=>{
