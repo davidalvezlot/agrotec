@@ -2,68 +2,180 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <title>Resolver Problema</title>
 
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
 <style>
-body {
-  font-family: Arial;
-  background: #f4f6f9;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 100vh;
+
+/* =========================
+   RESET
+========================= */
+
+*{
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
 }
 
-.container {
-  background: white;
-  padding: 25px;
-  border-radius: 15px;
-  width: 400px;
-  box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+/* =========================
+   BODY
+========================= */
+
+body{
+  font-family:'Inter',sans-serif;
+  background:#eef2f6;
+  min-height:100vh;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  padding:25px;
+  color:#1e293b;
 }
 
-h2 {
-  text-align: center;
+/* =========================
+   CONTAINER
+========================= */
+
+.container{
+  width:100%;
+  max-width:520px;
+  background:#f8f8f9;
+  border-radius:30px;
+  padding:35px;
+  box-shadow:0 10px 30px rgba(15,23,42,0.08);
+}
+
+/* =========================
+   HEADER
+========================= */
+
+.header{
+  margin-bottom:30px;
+}
+
+.header h2{
+  font-size:34px;
+  font-weight:800;
+  color:#243247;
+  margin-bottom:10px;
+}
+
+.header p{
+  color:#64748b;
+  font-size:15px;
+  line-height:1.5;
+}
+
+/* =========================
+   FORM
+========================= */
+
+.form-group{
+  margin-bottom:22px;
+}
+
+label{
+  display:block;
+  margin-bottom:10px;
+  font-size:14px;
+  font-weight:700;
+  color:#475569;
 }
 
 select,
-button,
-textarea {
-  width: 100%;
-  padding: 10px;
-  margin-top: 10px;
-  box-sizing: border-box;
+textarea{
+  width:100%;
+  border:none;
+  outline:none;
+  background:white;
+  border:1px solid #e2e8f0;
+  border-radius:18px;
+  padding:16px;
+  font-size:15px;
+  font-family:'Inter',sans-serif;
+  color:#1e293b;
+  transition:0.2s;
 }
 
-textarea {
-  resize: none;
-  height: 100px;
+select:focus,
+textarea:focus{
+  border-color:#243247;
 }
 
-#recursos {
-  margin-top: 10px;
+textarea{
+  resize:none;
+  min-height:130px;
 }
 
-.info {
-  margin-top: 15px;
-  background: #f7f7f7;
-  padding: 10px;
-  border-radius: 8px;
-  font-size: 14px;
+/* =========================
+   RECURSOS
+========================= */
+
+#recursos{
+  margin-bottom:22px;
 }
 
-button {
-  background: #2ecc71;
-  border: none;
-  color: white;
-  border-radius: 8px;
-  cursor: pointer;
-  font-weight: bold;
+/* =========================
+   INFO BOX
+========================= */
+
+.info{
+  background:white;
+  border:1px solid #e5e7eb;
+  border-radius:20px;
+  padding:18px;
+  margin-top:20px;
+  color:#64748b;
+  font-size:14px;
+  line-height:1.6;
 }
 
-button:hover {
-  background: #27ae60;
+/* =========================
+   BUTTON
+========================= */
+
+button{
+  width:100%;
+  border:none;
+  background:#243247;
+  color:white;
+  padding:16px;
+  border-radius:18px;
+  font-size:15px;
+  font-weight:700;
+  cursor:pointer;
+  transition:0.2s;
+  margin-top:8px;
 }
+
+button:hover{
+  opacity:0.92;
+  transform:translateY(-1px);
+}
+
+/* =========================
+   RESPONSIVE
+========================= */
+
+@media(max-width:600px){
+
+  .container{
+    padding:25px;
+    border-radius:24px;
+  }
+
+  .header h2{
+    font-size:28px;
+  }
+
+}
+
 </style>
 </head>
 
@@ -71,34 +183,74 @@ button:hover {
 
 <div class="container">
 
-  <h2>Resolver problema</h2>
+  <!-- HEADER -->
 
-  <select id="tipo">
+  <div class="header">
 
-    <option value="">
-      Selecciona problema
-    </option>
+    <h2>
+      Resolver problema
+    </h2>
 
-    <option value="error_finalizar">
-      Finalicé por error
-    </option>
+    <p>
+      Gestiona incidencias y solicita recursos o reapertura de actividades.
+    </p>
 
-    <option value="falta_recurso">
-      No había recurso
-    </option>
+  </div>
 
-  </select>
+  <!-- FORM -->
+
+  <div class="form-group">
+
+    <label>
+      Tipo de problema
+    </label>
+
+    <select id="tipo">
+
+      <option value="">
+        Selecciona problema
+      </option>
+
+      <option value="error_finalizar">
+        Finalicé por error
+      </option>
+
+      <option value="falta_recurso">
+        No había recurso
+      </option>
+
+    </select>
+
+  </div>
+
+  <!-- RECURSOS -->
 
   <div id="recursos"></div>
 
-  <textarea
-    id="descripcion"
-    placeholder="Describe el problema">
-  </textarea>
+  <!-- DESCRIPCION -->
+
+  <div class="form-group">
+
+    <label>
+      Descripción
+    </label>
+
+    <textarea
+      id="descripcion"
+      placeholder="Describe el problema">
+    </textarea>
+
+  </div>
+
+  <!-- BUTTON -->
 
   <button onclick="resolver()">
-    Resolver
+
+    Resolver problema
+
   </button>
+
+  <!-- INFO -->
 
   <div class="info">
 
@@ -110,6 +262,7 @@ button:hover {
 </div>
 
 <!-- EMAILJS -->
+
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 
 <script type="module">
@@ -128,12 +281,16 @@ import {
 }
 from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
 
+/* =========================
+   EMAILJS
+========================= */
 
-// EMAILJS
 emailjs.init("1xgXkmn1R5msn0Tmo");
 
+/* =========================
+   FIREBASE
+========================= */
 
-// FIREBASE
 const app = initializeApp({
 
   apiKey: "TU_API_KEY",
@@ -146,16 +303,20 @@ const app = initializeApp({
 
 const db = getFirestore(app);
 
+/* =========================
+   PARAMS
+========================= */
 
-// PARAMS
 const params =
   new URLSearchParams(window.location.search);
 
 const actId =
   params.get("actId");
 
+/* =========================
+   ELEMENTOS
+========================= */
 
-// ELEMENTOS
 const tipoSelect =
   document.getElementById("tipo");
 
@@ -166,8 +327,10 @@ let actividad = null;
 
 let recursosDisponibles = [];
 
+/* =========================
+   CARGAR ACTIVIDAD
+========================= */
 
-// CARGAR ACTIVIDAD
 async function cargar() {
 
   const snap =
@@ -189,8 +352,10 @@ async function cargar() {
 
 cargar();
 
+/* =========================
+   CAMBIO DE PROBLEMA
+========================= */
 
-// CAMBIO DE PROBLEMA
 tipoSelect.addEventListener(
   "change",
 
@@ -198,7 +363,6 @@ tipoSelect.addEventListener(
 
     contRecursos.innerHTML = "";
 
-    // FALTA RECURSO
     if (
       tipoSelect.value ===
       "falta_recurso"
@@ -231,18 +395,29 @@ tipoSelect.addEventListener(
         recursosDisponibles.length === 0
       ) {
 
-        contRecursos.innerHTML =
-          "No hay recursos disponibles";
+        contRecursos.innerHTML = `
+
+          <div class="info">
+            No hay recursos disponibles
+          </div>
+
+        `;
 
         return;
 
       }
 
-      let html =
-        "<label>Selecciona recurso:</label>";
+      let html = `
 
-      html +=
-        "<select id='recurso'>";
+        <div class="form-group">
+
+          <label>
+            Selecciona recurso
+          </label>
+
+          <select id="recurso">
+
+      `;
 
       recursosDisponibles.forEach(r => {
 
@@ -256,7 +431,13 @@ tipoSelect.addEventListener(
 
       });
 
-      html += "</select>";
+      html += `
+
+          </select>
+
+        </div>
+
+      `;
 
       contRecursos.innerHTML = html;
 
@@ -266,8 +447,10 @@ tipoSelect.addEventListener(
 
 );
 
+/* =========================
+   RESOLVER
+========================= */
 
-// RESOLVER
 window.resolver = async () => {
 
   const tipo =
@@ -287,14 +470,16 @@ window.resolver = async () => {
 
   }
 
-  // FINALIZÓ POR ERROR
+  /* =========================
+     FINALIZÓ POR ERROR
+  ========================= */
+
   if (
     tipo === "error_finalizar"
   ) {
 
     try {
 
-      // GUARDAR SOLICITUD
       await addDoc(
 
         collection(
@@ -329,12 +514,10 @@ window.resolver = async () => {
 
       );
 
-      // LINK REAPERTURA
       const link =
 
 `https://davidalvezlot.github.io/reabrir/?actId=${actId}`;
 
-      // ENVIAR CORREO
       await emailjs.send(
 
         "service_1uiukzg",
@@ -389,7 +572,10 @@ window.resolver = async () => {
 
   }
 
-  // FALTA DE RECURSO
+  /* =========================
+     FALTA DE RECURSO
+  ========================= */
+
   if (
     tipo === "falta_recurso"
   ) {
@@ -416,7 +602,6 @@ window.resolver = async () => {
         r => r.id === recursoId
       );
 
-    // ACTUALIZAR ACTIVIDAD
     await updateDoc(
 
       doc(
@@ -440,7 +625,6 @@ window.resolver = async () => {
 
     );
 
-    // RECURSO EN USO
     await updateDoc(
 
       doc(
