@@ -124,11 +124,18 @@ button:disabled{
   <div class="progreso-box">
 
     <div class="barra">
-      <div class="progreso" id="barraProgreso"></div>
+      <div
+        class="progreso"
+        id="barraProgreso">
+      </div>
     </div>
 
-    <div class="texto-progreso" id="textoProgreso">
+    <div
+      class="texto-progreso"
+      id="textoProgreso">
+
       Esperando inicio
+
     </div>
 
   </div>
@@ -167,11 +174,13 @@ import { initializeApp }
 from "https://www.gstatic.com/firebasejs/12.12.1/firebase-app.js";
 
 import {
+
   getFirestore,
   doc,
   getDoc,
   updateDoc,
   increment
+
 }
 from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
 
@@ -179,9 +188,12 @@ from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
 // FIREBASE
 const app = initializeApp({
 
-  apiKey: "TU_API_KEY",
-  authDomain: "agrotecdb.firebaseapp.com",
-  projectId: "agrotecdb"
+  apiKey:"TU_API_KEY",
+
+  authDomain:
+  "agrotecdb.firebaseapp.com",
+
+  projectId:"agrotecdb"
 
 });
 
@@ -189,18 +201,25 @@ const db = getFirestore(app);
 
 
 // PARAMETROS
-const params = new URLSearchParams(window.location.search);
+const params =
+new URLSearchParams(window.location.search);
 
-const actId = params.get("actId");
-const nombre = params.get("nombre");
+const actId =
+params.get("actId");
+
+const nombre =
+params.get("nombre");
 
 
 // ELEMENTOS
-const info = document.getElementById("info");
+const info =
+document.getElementById("info");
 
-const saludo = document.getElementById("saludo");
+const saludo =
+document.getElementById("saludo");
 
-const barra = document.getElementById("barraProgreso");
+const barra =
+document.getElementById("barraProgreso");
 
 const textoProgreso =
 document.getElementById("textoProgreso");
@@ -217,10 +236,11 @@ let actividadData = null;
 let intervalo = null;
 
 
-// CARGAR
+// CARGAR ACTIVIDAD
 async function cargar(){
 
-  saludo.innerHTML = `Hola, ${nombre}`;
+  saludo.innerHTML =
+  `Hola, ${nombre}`;
 
   const ref =
   doc(db,"actividades",actId);
@@ -261,7 +281,8 @@ async function cargar(){
 
     <p>
       <strong>Duración:</strong>
-      ${actividadData.duracionHoras || 2} horas
+      ${actividadData.duracionHoras || 2}
+      horas
     </p>
 
     <div class="estado ${estadoClase}">
@@ -270,14 +291,21 @@ async function cargar(){
 
   `;
 
+  // FINALIZADA
+  if(
+    actividadData.estado ===
+    "finalizada"
+  ){
 
-  // SI YA ESTA FINALIZADA
-  if(actividadData.estado === "finalizada"){
+    const progreso =
+    actividadData.progreso || 0;
 
-    barra.style.width = "100%";
+    barra.style.width =
+    progreso + "%";
 
     textoProgreso.innerHTML =
-    "Actividad completada";
+    progreso +
+    "% completado";
 
     btnIniciar.disabled = true;
 
@@ -287,9 +315,10 @@ async function cargar(){
 
   }
 
-
-  // SI YA ESTA INICIADA MANUALMENTE
-  if(actividadData.iniciada === true){
+  // EN PROCESO
+  if(
+    actividadData.iniciada === true
+  ){
 
     btnIniciar.disabled = true;
 
@@ -299,7 +328,7 @@ async function cargar(){
 
   }else{
 
-    // NO INICIADA
+    // SIN INICIAR
     barra.style.width = "0%";
 
     textoProgreso.innerHTML =
@@ -317,9 +346,11 @@ cargar();
 
 
 // INICIAR
-window.iniciar = async () => {
+window.iniciar = async()=>{
 
-  if(actividadData.iniciada === true){
+  if(
+    actividadData.iniciada === true
+  ){
     return;
   }
 
@@ -328,7 +359,11 @@ window.iniciar = async () => {
 
   await updateDoc(
 
-    doc(db,"actividades",actId),
+    doc(
+      db,
+      "actividades",
+      actId
+    ),
 
     {
 
@@ -388,13 +423,20 @@ function iniciarContador(){
     );
 
     const duracionSegundos =
-    (actividadData.duracionHoras || 2)
-    * 3600;
+
+    (
+      actividadData.duracionHoras || 2
+    ) * 3600;
 
     let porcentaje =
+
     Math.floor(
-      (transcurrido/duracionSegundos)
-      * 100
+
+      (
+        transcurrido /
+        duracionSegundos
+      ) * 100
+
     );
 
     if(porcentaje > 100){
@@ -403,15 +445,23 @@ function iniciarContador(){
 
     }
 
+    // ACTUALIZAR BARRA
     barra.style.width =
     porcentaje + "%";
 
     textoProgreso.innerHTML =
-    porcentaje + "% completado";
 
+    porcentaje +
+    "% completado";
+
+    // GUARDAR PROGRESO
     await updateDoc(
 
-      doc(db,"actividades",actId),
+      doc(
+        db,
+        "actividades",
+        actId
+      ),
 
       {
 
@@ -423,6 +473,35 @@ function iniciarContador(){
       }
 
     );
+
+    // ACTUALIZAR ESTADO
+    // DEL TRABAJADOR
+    if(actividadData.usuarioId){
+
+      await updateDoc(
+
+        doc(
+          db,
+          "usuarios",
+          actividadData.usuarioId
+        ),
+
+        {
+
+          estadoActividad:
+          "Trabajando",
+
+          actividadActual:
+          actividadData.nombre,
+
+          progresoActual:
+          porcentaje
+
+        }
+
+      );
+
+    }
 
     if(porcentaje >= 100){
 
@@ -452,28 +531,82 @@ window.finalizar = async()=>{
 
   clearInterval(intervalo);
 
-  const horas =
-  actividadData.duracionHoras || 2;
+  // CALCULAR PROGRESO REAL
+  const inicio =
+  new Date(
+    actividadData.fechaInicio
+  ).getTime();
 
+  const ahora =
+  new Date().getTime();
+
+  const transcurrido =
+  Math.floor(
+    (ahora - inicio)/1000
+  );
+
+  const duracionSegundos =
+
+  (
+    actividadData.duracionHoras || 2
+  ) * 3600;
+
+  let porcentaje =
+
+  Math.floor(
+
+    (
+      transcurrido /
+      duracionSegundos
+    ) * 100
+
+  );
+
+  // LIMITE
+  if(porcentaje > 100){
+
+    porcentaje = 100;
+
+  }
+
+  // HORAS REALES
+  const horasReales =
+
+  (
+    transcurrido / 3600
+  ).toFixed(2);
+
+  // GUARDAR ACTIVIDAD
   await updateDoc(
 
-    doc(db,"actividades",actId),
+    doc(
+      db,
+      "actividades",
+      actId
+    ),
 
     {
 
       estado:"finalizada",
 
+      iniciada:false,
+
       fechaFin:
       new Date().toISOString(),
 
-      progreso:100
+      progreso:porcentaje,
+
+      tiempoTranscurrido:
+      transcurrido,
+
+      horasReales:
+      Number(horasReales)
 
     }
 
   );
 
-
-  // SUMAR HORAS
+  // ACTUALIZAR USUARIO
   if(actividadData.usuarioId){
 
     await updateDoc(
@@ -487,19 +620,30 @@ window.finalizar = async()=>{
       {
 
         horasHoy:
-        increment(horas),
+        increment(
+          Number(horasReales)
+        ),
 
         actividadesHoy:
         increment(1),
 
-        ultimoProgreso:100
+        ultimoProgreso:
+        porcentaje,
+
+        progresoActual:
+        porcentaje,
+
+        estadoActividad:
+        "Finalizada",
+
+        actividadActual:
+        actividadData.nombre
 
       }
 
     );
 
   }
-
 
   // LIBERAR RECURSO
   if(actividadData.recursoId){
@@ -528,14 +672,24 @@ window.finalizar = async()=>{
 
   }
 
-  barra.style.width = "100%";
+  // ACTUALIZAR INTERFAZ
+  barra.style.width =
+  porcentaje + "%";
 
   textoProgreso.innerHTML =
-  "Actividad completada";
+
+  porcentaje +
+  "% completado";
 
   btnFinalizar.disabled = true;
 
-  alert("Actividad finalizada");
+  alert(
+
+    "Actividad finalizada con "
+    + porcentaje +
+    "% de progreso"
+
+  );
 
 };
 
