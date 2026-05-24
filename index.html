@@ -5,56 +5,58 @@
 <title>Asistencia</title>
 
 <style>
-body {
-  font-family: Arial;
-  background: #f4f6f9;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100vh;
+
+body{
+  font-family:Arial;
+  background:#f4f6f9;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  min-height:100vh;
 }
 
-.container {
-  background: white;
-  padding: 30px;
-  border-radius: 10px;
-  text-align: center;
-  width: 340px;
-  box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+.container{
+  background:white;
+  padding:30px;
+  border-radius:15px;
+  text-align:center;
+  width:380px;
+  box-shadow:0 5px 15px rgba(0,0,0,0.1);
 }
 
-input {
-  width: 90%;
-  padding: 10px;
-  margin: 10px 0;
-  border: 1px solid #ccc;
-  border-radius: 5px;
+input{
+  width:90%;
+  padding:10px;
+  margin:10px 0;
+  border:1px solid #ccc;
+  border-radius:5px;
 }
 
-button {
-  padding: 10px;
-  width: 100%;
-  background: #2ecc71;
-  border: none;
-  color: white;
-  border-radius: 5px;
-  cursor: pointer;
-  font-weight: bold;
+button{
+  padding:12px;
+  width:100%;
+  background:#2ecc71;
+  border:none;
+  color:white;
+  border-radius:8px;
+  cursor:pointer;
+  font-weight:bold;
+  margin-top:10px;
 }
 
-button:hover {
-  background: #27ae60;
+button:hover{
+  background:#27ae60;
 }
 
-.estado {
-  margin-top: 15px;
-  font-weight: bold;
+.estado{
+  margin-top:15px;
+  font-weight:bold;
 }
 
-.info {
-  font-size: 13px;
-  color: #666;
-  margin-top: 10px;
+.info{
+  font-size:13px;
+  color:#666;
+  margin-top:10px;
 }
 
 /* PROGRESO */
@@ -94,6 +96,30 @@ button:hover {
   color:#e67e22;
   font-weight:bold;
 }
+
+/* ACTIVIDAD */
+.actividad-box{
+  margin-top:20px;
+  background:#f7f9fc;
+  padding:15px;
+  border-radius:12px;
+  text-align:left;
+}
+
+.actividad-box h4{
+  margin-top:0;
+}
+
+.en_proceso{
+  color:#f39c12;
+  font-weight:bold;
+}
+
+.finalizada{
+  color:#2980b9;
+  font-weight:bold;
+}
+
 </style>
 </head>
 
@@ -102,12 +128,22 @@ button:hover {
 <div class="container">
 
   <h3>Bienvenido</h3>
+
   <p>Inicia sesión</p>
 
-  <input type="text" id="correo" placeholder="Correo">
-  <input type="password" id="password" placeholder="Contraseña">
+  <input
+    type="text"
+    id="correo"
+    placeholder="Correo">
 
-  <button onclick="login()">Ingresar</button>
+  <input
+    type="password"
+    id="password"
+    placeholder="Contraseña">
+
+  <button onclick="login()">
+    Ingresar
+  </button>
 
   <div id="panelAsistencia" style="display:none;">
 
@@ -123,29 +159,89 @@ button:hover {
       Instituto Tecnológico de Pachuca
     </div>
 
+    <!-- ACTIVIDAD ACTUAL -->
+    <div class="actividad-box">
+
+      <h4>
+        Actividad actual
+      </h4>
+
+      <p>
+
+        <strong>Actividad:</strong>
+
+        <span id="actividadActual">
+          Sin actividad
+        </span>
+
+      </p>
+
+      <p>
+
+        <strong>Estado:</strong>
+
+        <span id="estadoActividad">
+          Inactivo
+        </span>
+
+      </p>
+
+      <p>
+
+        <strong>Progreso:</strong>
+
+        <span id="progresoActual">
+          0%
+        </span>
+
+      </p>
+
+    </div>
+
     <!-- PROGRESO -->
     <div class="panel-progreso">
 
       <h4>Progreso diario</h4>
 
       <div class="barra">
-        <div class="progreso" id="barraProgreso"></div>
+
+        <div
+          class="progreso"
+          id="barraProgreso">
+
+        </div>
+
       </div>
 
       <div class="stats">
+
         <p>
+
           Actividades completadas:
-          <strong id="actividadesCompletadas">0</strong>/3
+
+          <strong id="actividadesCompletadas">
+            0
+          </strong>/3
+
         </p>
 
         <p>
+
           Horas trabajadas:
-          <strong id="horasTrabajadas">0</strong>/6
+
+          <strong id="horasTrabajadas">
+            0
+          </strong>/6
+
         </p>
 
-        <p id="estadoJornada" class="incompleto">
+        <p id="estadoJornada"
+           class="incompleto">
+
           Jornada incompleta
+
         </p>
+
       </div>
 
     </div>
@@ -162,6 +258,7 @@ import { initializeApp }
 from "https://www.gstatic.com/firebasejs/12.12.1/firebase-app.js";
 
 import {
+
   getFirestore,
   collection,
   getDocs,
@@ -170,234 +267,462 @@ import {
   query,
   where,
   onSnapshot
+
 }
 from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
 
+
 // FIREBASE
 const firebaseConfig = {
-  apiKey: "TU_API_KEY",
-  authDomain: "agrotecdb.firebaseapp.com",
-  projectId: "agrotecdb"
+
+  apiKey:"TU_API_KEY",
+
+  authDomain:"agrotecdb.firebaseapp.com",
+
+  projectId:"agrotecdb"
+
 };
 
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+const app =
+initializeApp(firebaseConfig);
 
-/*
-Instituto Tecnológico de Pachuca
-*/
+const db =
+getFirestore(app);
 
+
+// UBICACION
 const LAT_CENTRO = 20.0839;
+
 const LNG_CENTRO = -98.7750;
 
 const MARGEN = 0.0040;
 
+
 let usuarioActual = null;
+
 let usuarioId = null;
 
+
 // LOGIN
-window.login = async () => {
+window.login = async()=>{
 
-  const correo = document.getElementById("correo").value.trim();
-  const password = document.getElementById("password").value.trim();
+  const correo =
+  document
+  .getElementById("correo")
+  .value
+  .trim();
 
-  if (!correo || !password) {
-    alert("Completa todos los campos");
+  const password =
+  document
+  .getElementById("password")
+  .value
+  .trim();
+
+  if(!correo || !password){
+
+    alert(
+      "Completa todos los campos"
+    );
+
     return;
+
   }
 
-  const snapshot = await getDocs(collection(db, "usuarios"));
+  const snapshot =
+  await getDocs(
+    collection(db,"usuarios")
+  );
 
   let encontrado = false;
 
-  snapshot.forEach((docSnap) => {
+  snapshot.forEach((docSnap)=>{
 
     const data = docSnap.data();
 
-    if (
+    if(
+
       data.correo === correo &&
+
       data.password === password
-    ) {
+
+    ){
 
       usuarioActual = data;
+
       usuarioId = docSnap.id;
+
       encontrado = true;
+
     }
 
   });
 
-  if (!encontrado) {
-    alert("El correo o la contraseña no coinciden");
+  if(!encontrado){
+
+    alert(
+      "El correo o contraseña no coinciden"
+    );
+
     return;
+
   }
 
-  document.getElementById("panelAsistencia").style.display = "block";
+  document
+  .getElementById("panelAsistencia")
+  .style.display = "block";
 
-  document.getElementById("nombreUsuario").innerText =
-    "Hola " + usuarioActual.nombre;
+  document
+  .getElementById("nombreUsuario")
+  .innerText =
+  "Hola " + usuarioActual.nombre;
 
   cargarProgreso();
 
-  alert("Inicio de sesión exitoso");
-};
-
-// PROGRESO EN TIEMPO REAL
-function cargarProgreso() {
-
-  const hoy = new Date().toISOString().split("T")[0];
-
-  const q = query(
-    collection(db, "actividades"),
-    where("usuarioId", "==", usuarioId)
+  alert(
+    "Inicio de sesión exitoso"
   );
 
-  onSnapshot(q, (snapshot) => {
+};
+
+
+// PROGRESO TIEMPO REAL
+function cargarProgreso(){
+
+  const hoy =
+  new Date()
+  .toISOString()
+  .split("T")[0];
+
+  const q = query(
+
+    collection(db,"actividades"),
+
+    where(
+      "usuarioId",
+      "==",
+      usuarioId
+    )
+
+  );
+
+  onSnapshot(q,(snapshot)=>{
 
     let actividadesFinalizadas = 0;
+
     let horasTotales = 0;
 
-    snapshot.forEach((docSnap) => {
+    let actividadActiva = null;
 
-      const act = docSnap.data();
+    snapshot.forEach((docSnap)=>{
 
-      if (
+      const act =
+      docSnap.data();
+
+      // ACTIVIDAD ACTUAL
+      if(
+        act.estado === "en_proceso"
+      ){
+
+        actividadActiva = act;
+
+      }
+
+      // FINALIZADAS HOY
+      if(
+
         act.estado === "finalizada" &&
+
         act.fechaFin
-      ) {
+
+      ){
 
         const fechaActividad =
-          act.fechaFin.split("T")[0];
 
-        if (fechaActividad === hoy) {
+        act.fechaFin
+        .split("T")[0];
+
+        if(
+          fechaActividad === hoy
+        ){
 
           actividadesFinalizadas++;
 
-          horasTotales += Number(
-            act.duracionHoras || 0
+          // HORAS SEGUN PROGRESO
+          const progreso =
+          Number(
+            act.progreso || 0
           );
+
+          const horas =
+          Number(
+            act.duracionHoras || 2
+          );
+
+          const horasReales =
+          (
+            horas *
+            progreso
+          ) / 100;
+
+          horasTotales +=
+          horasReales;
+
         }
 
       }
 
     });
 
+
+    // ACTIVIDAD ACTUAL
+    if(actividadActiva){
+
+      document
+      .getElementById("actividadActual")
+      .innerText =
+
+      actividadActiva.nombre ||
+      "Actividad";
+
+      document
+      .getElementById("estadoActividad")
+      .innerHTML =
+
+      `<span class="en_proceso">
+        En proceso
+      </span>`;
+
+      document
+      .getElementById("progresoActual")
+      .innerText =
+
+      (actividadActiva.progreso || 0)
+      + "%";
+
+    }else{
+
+      document
+      .getElementById("actividadActual")
+      .innerText =
+      "Sin actividad";
+
+      document
+      .getElementById("estadoActividad")
+      .innerHTML =
+
+      `<span class="finalizada">
+        Inactivo
+      </span>`;
+
+      document
+      .getElementById("progresoActual")
+      .innerText =
+      "0%";
+
+    }
+
+
     // ACTIVIDADES
-    document.getElementById(
+    document
+    .getElementById(
       "actividadesCompletadas"
-    ).innerText = actividadesFinalizadas;
+    )
+    .innerText =
+    actividadesFinalizadas;
+
 
     // HORAS
-    document.getElementById(
+    document
+    .getElementById(
       "horasTrabajadas"
-    ).innerText = horasTotales.toFixed(1);
+    )
+    .innerText =
+    horasTotales.toFixed(1);
+
 
     // PORCENTAJE
     let porcentajeActividades =
-      (actividadesFinalizadas / 3) * 100;
+
+      (
+        actividadesFinalizadas / 3
+      ) * 100;
 
     let porcentajeHoras =
-      (horasTotales / 6) * 100;
+
+      (
+        horasTotales / 6
+      ) * 100;
 
     let porcentajeFinal =
-      (porcentajeActividades + porcentajeHoras) / 2;
 
-    if (porcentajeFinal > 100) {
+      (
+        porcentajeActividades +
+        porcentajeHoras
+      ) / 2;
+
+    if(porcentajeFinal > 100){
+
       porcentajeFinal = 100;
+
     }
 
+    document
+    .getElementById("barraProgreso")
+    .style.width =
+
+    porcentajeFinal + "%";
+
+
+    // ESTADO JORNADA
+    const estado =
+
     document.getElementById(
-      "barraProgreso"
-    ).style.width = porcentajeFinal + "%";
+      "estadoJornada"
+    );
 
-    // ESTADO
-    const estado = document.getElementById("estadoJornada");
+    if(
 
-    if (
       actividadesFinalizadas >= 3 &&
+
       horasTotales >= 6
-    ) {
+
+    ){
 
       estado.innerText =
-        "Jornada completada";
+      "Jornada completada";
 
-      estado.className = "completo";
+      estado.className =
+      "completo";
 
-    } else {
+    }else{
 
       estado.innerText =
-        "Jornada incompleta";
+      "Jornada incompleta";
 
-      estado.className = "incompleto";
+      estado.className =
+      "incompleto";
+
     }
 
   });
 
 }
 
-// VERIFICAR UBICACIÓN
-window.verificarUbicacion = () => {
 
-  if (!usuarioId) {
-    alert("Primero inicia sesión");
+// UBICACION
+window.verificarUbicacion = ()=>{
+
+  if(!usuarioId){
+
+    alert(
+      "Primero inicia sesión"
+    );
+
     return;
+
   }
 
-  navigator.geolocation.getCurrentPosition(
+  navigator.geolocation
+  .getCurrentPosition(
 
-    async (pos) => {
+    async(pos)=>{
 
-      const lat = pos.coords.latitude;
-      const lng = pos.coords.longitude;
+      const lat =
+      pos.coords.latitude;
 
-      let estadoFinal = "inactivo";
+      const lng =
+      pos.coords.longitude;
+
+      let estadoFinal =
+      "inactivo";
 
       const dentroLat =
-        lat >= (LAT_CENTRO - MARGEN) &&
-        lat <= (LAT_CENTRO + MARGEN);
+
+      lat >=
+      (LAT_CENTRO - MARGEN)
+
+      &&
+
+      lat <=
+      (LAT_CENTRO + MARGEN);
 
       const dentroLng =
-        lng >= (LNG_CENTRO - MARGEN) &&
-        lng <= (LNG_CENTRO + MARGEN);
 
-      if (dentroLat && dentroLng) {
+      lng >=
+      (LNG_CENTRO - MARGEN)
+
+      &&
+
+      lng <=
+      (LNG_CENTRO + MARGEN);
+
+      if(
+        dentroLat &&
+        dentroLng
+      ){
+
         estadoFinal = "activo";
+
       }
 
-      await updateDoc(doc(db, "usuarios", usuarioId), {
+      await updateDoc(
 
-        estadoHoy: estadoFinal,
+        doc(
+          db,
+          "usuarios",
+          usuarioId
+        ),
 
-        ultimaAsistencia: new Date().toISOString(),
+        {
 
-        ubicacion: {
-          latitud: lat,
-          longitud: lng
+          estadoHoy:
+          estadoFinal,
+
+          ultimaAsistencia:
+          new Date().toISOString(),
+
+          ubicacion:{
+
+            latitud:lat,
+
+            longitud:lng
+
+          }
+
         }
 
-      });
+      );
 
-      document.getElementById("estado").innerText =
+      document
+      .getElementById("estado")
+      .innerText =
 
-        estadoFinal === "activo"
+      estadoFinal === "activo"
 
-        ? "Asistencia registrada correctamente"
+      ? "Asistencia registrada correctamente"
 
-        : "Fuera del área permitida";
+      : "Fuera del área permitida";
 
     },
 
-    (error) => {
+    (error)=>{
 
       console.error(error);
 
-      alert("Error al obtener ubicación");
+      alert(
+        "Error al obtener ubicación"
+      );
 
     },
 
     {
-      enableHighAccuracy: true,
-      timeout: 10000,
-      maximumAge: 0
+
+      enableHighAccuracy:true,
+
+      timeout:10000,
+
+      maximumAge:0
+
     }
 
   );
