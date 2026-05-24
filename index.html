@@ -20,7 +20,7 @@ body{
   padding:30px;
   border-radius:15px;
   text-align:center;
-  width:380px;
+  width:420px;
   box-shadow:0 5px 15px rgba(0,0,0,0.1);
 }
 
@@ -120,6 +120,21 @@ button:hover{
   font-weight:bold;
 }
 
+.dato{
+  margin-top:8px;
+  font-size:15px;
+}
+
+.restante{
+  color:#e74c3c;
+  font-weight:bold;
+}
+
+.completado{
+  color:#27ae60;
+  font-weight:bold;
+}
+
 </style>
 </head>
 
@@ -159,14 +174,14 @@ button:hover{
       Instituto Tecnológico de Pachuca
     </div>
 
-    <!-- ACTIVIDAD ACTUAL -->
+    <!-- ACTIVIDAD -->
     <div class="actividad-box">
 
       <h4>
         Actividad actual
       </h4>
 
-      <p>
+      <div class="dato">
 
         <strong>Actividad:</strong>
 
@@ -174,9 +189,9 @@ button:hover{
           Sin actividad
         </span>
 
-      </p>
+      </div>
 
-      <p>
+      <div class="dato">
 
         <strong>Estado:</strong>
 
@@ -184,9 +199,9 @@ button:hover{
           Inactivo
         </span>
 
-      </p>
+      </div>
 
-      <p>
+      <div class="dato">
 
         <strong>Progreso:</strong>
 
@@ -194,14 +209,36 @@ button:hover{
           0%
         </span>
 
-      </p>
+      </div>
+
+      <div class="dato">
+
+        <strong>Horas completadas:</strong>
+
+        <span id="horasCompletadas">
+          0
+        </span>
+
+      </div>
+
+      <div class="dato restante">
+
+        <strong>Horas faltantes:</strong>
+
+        <span id="horasRestantes">
+          6
+        </span>
+
+      </div>
 
     </div>
 
     <!-- PROGRESO -->
     <div class="panel-progreso">
 
-      <h4>Progreso diario</h4>
+      <h4>
+        Progreso diario
+      </h4>
 
       <div class="barra">
 
@@ -217,7 +254,7 @@ button:hover{
 
         <p>
 
-          Actividades completadas:
+          Actividades finalizadas:
 
           <strong id="actividadesCompletadas">
             0
@@ -232,6 +269,16 @@ button:hover{
           <strong id="horasTrabajadas">
             0
           </strong>/6
+
+        </p>
+
+        <p>
+
+          Horas faltantes:
+
+          <strong id="horasFaltantes">
+            6
+          </strong>
 
         </p>
 
@@ -418,7 +465,7 @@ function cargarProgreso(){
       const act =
       docSnap.data();
 
-      // ACTIVIDAD ACTUAL
+      // ACTIVIDAD ACTIVA
       if(
         act.estado === "en_proceso"
       ){
@@ -427,7 +474,7 @@ function cargarProgreso(){
 
       }
 
-      // FINALIZADAS HOY
+      // FINALIZADAS
       if(
 
         act.estado === "finalizada" &&
@@ -447,7 +494,6 @@ function cargarProgreso(){
 
           actividadesFinalizadas++;
 
-          // HORAS SEGUN PROGRESO
           const progreso =
           Number(
             act.progreso || 0
@@ -458,6 +504,7 @@ function cargarProgreso(){
             act.duracionHoras || 2
           );
 
+          // HORAS REALES
           const horasReales =
           (
             horas *
@@ -476,6 +523,22 @@ function cargarProgreso(){
 
     // ACTIVIDAD ACTUAL
     if(actividadActiva){
+
+      const progresoActual =
+      Number(
+        actividadActiva.progreso || 0
+      );
+
+      const horasActividad =
+      Number(
+        actividadActiva.duracionHoras || 2
+      );
+
+      const horasCompletadas =
+      (
+        horasActividad *
+        progresoActual
+      ) / 100;
 
       document
       .getElementById("actividadActual")
@@ -496,8 +559,14 @@ function cargarProgreso(){
       .getElementById("progresoActual")
       .innerText =
 
-      (actividadActiva.progreso || 0)
-      + "%";
+      progresoActual + "%";
+
+      document
+      .getElementById("horasCompletadas")
+      .innerText =
+
+      horasCompletadas.toFixed(2)
+      + " horas";
 
     }else{
 
@@ -519,6 +588,20 @@ function cargarProgreso(){
       .innerText =
       "0%";
 
+      document
+      .getElementById("horasCompletadas")
+      .innerText =
+      "0 horas";
+
+    }
+
+
+    // HORAS RESTANTES
+    let faltantes =
+    6 - horasTotales;
+
+    if(faltantes < 0){
+      faltantes = 0;
     }
 
 
@@ -537,32 +620,38 @@ function cargarProgreso(){
       "horasTrabajadas"
     )
     .innerText =
-    horasTotales.toFixed(1);
+    horasTotales.toFixed(2);
 
 
-    // PORCENTAJE
-    let porcentajeActividades =
+    // FALTANTES
+    document
+    .getElementById(
+      "horasFaltantes"
+    )
+    .innerText =
+    faltantes.toFixed(2);
 
-      (
-        actividadesFinalizadas / 3
-      ) * 100;
+    document
+    .getElementById(
+      "horasRestantes"
+    )
+    .innerText =
+    faltantes.toFixed(2)
+    + " horas";
 
+
+    // PORCENTAJE TOTAL
     let porcentajeHoras =
 
       (
         horasTotales / 6
       ) * 100;
 
-    let porcentajeFinal =
+    if(
+      porcentajeHoras > 100
+    ){
 
-      (
-        porcentajeActividades +
-        porcentajeHoras
-      ) / 2;
-
-    if(porcentajeFinal > 100){
-
-      porcentajeFinal = 100;
+      porcentajeHoras = 100;
 
     }
 
@@ -570,10 +659,10 @@ function cargarProgreso(){
     .getElementById("barraProgreso")
     .style.width =
 
-    porcentajeFinal + "%";
+    porcentajeHoras + "%";
 
 
-    // ESTADO JORNADA
+    // ESTADO
     const estado =
 
     document.getElementById(
@@ -581,23 +670,22 @@ function cargarProgreso(){
     );
 
     if(
-
-      actividadesFinalizadas >= 3 &&
-
       horasTotales >= 6
-
     ){
 
       estado.innerText =
       "Jornada completada";
 
       estado.className =
-      "completo";
+      "completado";
 
     }else{
 
       estado.innerText =
-      "Jornada incompleta";
+
+      "Faltan " +
+      faltantes.toFixed(2) +
+      " horas para completar la jornada";
 
       estado.className =
       "incompleto";
