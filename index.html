@@ -1,138 +1,283 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <title>Asistencia</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
 <style>
 
+/* =========================
+   RESET
+========================= */
+
+*{
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
+}
+
+/* =========================
+   BODY
+========================= */
+
 body{
-  font-family:Arial;
-  background:#f4f6f9;
+  font-family:'Inter',sans-serif;
+  background:#eef2f6;
+  min-height:100vh;
   display:flex;
   justify-content:center;
   align-items:center;
-  min-height:100vh;
+  padding:30px;
+  color:#1e293b;
 }
+
+/* =========================
+   CONTAINER
+========================= */
 
 .container{
-  background:white;
-  padding:30px;
-  border-radius:15px;
-  text-align:center;
-  width:420px;
-  box-shadow:0 5px 15px rgba(0,0,0,0.1);
-}
-
-input{
-  width:90%;
-  padding:10px;
-  margin:10px 0;
-  border:1px solid #ccc;
-  border-radius:5px;
-}
-
-button{
-  padding:12px;
   width:100%;
-  background:#2ecc71;
-  border:none;
-  color:white;
-  border-radius:8px;
-  cursor:pointer;
-  font-weight:bold;
-  margin-top:10px;
+  max-width:520px;
+  background:#f8f8f9;
+  border-radius:32px;
+  padding:35px;
+  border:1px solid #e5e7eb;
+  box-shadow:0 10px 30px rgba(15,23,42,0.05);
 }
 
-button:hover{
-  background:#27ae60;
+/* =========================
+   HEADER
+========================= */
+
+.header{
+  margin-bottom:30px;
 }
 
-.estado{
-  margin-top:15px;
-  font-weight:bold;
+.header h1{
+  font-size:38px;
+  font-weight:800;
+  color:#243247;
+  margin-bottom:8px;
 }
 
-.info{
-  font-size:13px;
-  color:#666;
-  margin-top:10px;
-}
-
-/* PROGRESO */
-.panel-progreso{
-  margin-top:20px;
-  text-align:left;
-}
-
-.barra{
-  width:100%;
-  height:25px;
-  background:#ddd;
-  border-radius:20px;
-  overflow:hidden;
-  margin-top:8px;
-}
-
-.progreso{
-  height:100%;
-  width:0%;
-  background:#2ecc71;
-  transition:0.4s;
-}
-
-.stats{
-  margin-top:10px;
-  font-size:14px;
-  color:#444;
-}
-
-.completo{
-  color:#27ae60;
-  font-weight:bold;
-}
-
-.incompleto{
-  color:#e67e22;
-  font-weight:bold;
-}
-
-/* ACTIVIDAD */
-.actividad-box{
-  margin-top:20px;
-  background:#f7f9fc;
-  padding:15px;
-  border-radius:12px;
-  text-align:left;
-}
-
-.actividad-box h4{
-  margin-top:0;
-}
-
-.en_proceso{
-  color:#f39c12;
-  font-weight:bold;
-}
-
-.finalizada{
-  color:#2980b9;
-  font-weight:bold;
-}
-
-.dato{
-  margin-top:8px;
+.header p{
+  color:#64748b;
   font-size:15px;
 }
 
-.restante{
-  color:#e74c3c;
-  font-weight:bold;
+/* =========================
+   INPUTS
+========================= */
+
+.input-group{
+  margin-bottom:18px;
+}
+
+.input-group label{
+  display:block;
+  margin-bottom:8px;
+  font-size:14px;
+  font-weight:600;
+  color:#475569;
+}
+
+input{
+  width:100%;
+  padding:15px;
+  border:none;
+  border-radius:16px;
+  background:white;
+  border:1px solid #e5e7eb;
+  font-size:15px;
+  outline:none;
+  transition:0.2s;
+}
+
+input:focus{
+  border-color:#94a3b8;
+}
+
+/* =========================
+   BUTTONS
+========================= */
+
+button{
+  width:100%;
+  padding:15px;
+  border:none;
+  border-radius:16px;
+  background:#243247;
+  color:white;
+  font-size:15px;
+  font-weight:700;
+  cursor:pointer;
+  transition:0.2s;
+}
+
+button:hover{
+  opacity:0.92;
+}
+
+/* =========================
+   USER INFO
+========================= */
+
+.usuario{
+  margin:25px 0 15px;
+  padding:18px;
+  background:white;
+  border-radius:18px;
+  border:1px solid #e5e7eb;
+  font-weight:600;
+  color:#243247;
+}
+
+/* =========================
+   INFO
+========================= */
+
+.info{
+  margin-top:12px;
+  text-align:center;
+  color:#64748b;
+  font-size:13px;
+}
+
+/* =========================
+   CARDS
+========================= */
+
+.card{
+  margin-top:22px;
+  background:white;
+  border-radius:24px;
+  padding:22px;
+  border:1px solid #edf1f5;
+}
+
+.card h3{
+  font-size:20px;
+  margin-bottom:18px;
+  color:#243247;
+}
+
+/* =========================
+   DATOS
+========================= */
+
+.dato{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  background:#f8fafc;
+  padding:14px;
+  border-radius:14px;
+  margin-bottom:12px;
+  font-size:14px;
+}
+
+.dato strong{
+  color:#64748b;
+  font-weight:600;
+}
+
+/* =========================
+   ESTADOS
+========================= */
+
+.en_proceso{
+  background:#fff7ed;
+  color:#c2410c;
+  padding:5px 12px;
+  border-radius:999px;
+  font-size:12px;
+  font-weight:700;
+}
+
+.finalizada{
+  background:#eff6ff;
+  color:#2563eb;
+  padding:5px 12px;
+  border-radius:999px;
+  font-size:12px;
+  font-weight:700;
 }
 
 .completado{
-  color:#27ae60;
-  font-weight:bold;
+  color:#16a34a;
+  font-weight:700;
+}
+
+.incompleto{
+  color:#ea580c;
+  font-weight:700;
+}
+
+/* =========================
+   BARRA
+========================= */
+
+.barra{
+  width:100%;
+  height:18px;
+  background:#e5e7eb;
+  border-radius:999px;
+  overflow:hidden;
+  margin:18px 0;
+}
+
+.progreso{
+  width:0%;
+  height:100%;
+  background:#243247;
+  transition:0.4s;
+}
+
+/* =========================
+   STATS
+========================= */
+
+.stats p{
+  margin-bottom:12px;
+  font-size:14px;
+  color:#334155;
+}
+
+/* =========================
+   ESTADO FINAL
+========================= */
+
+.estado{
+  margin-top:20px;
+  text-align:center;
+  font-size:15px;
+  font-weight:700;
+  color:#243247;
+}
+
+/* =========================
+   RESPONSIVE
+========================= */
+
+@media(max-width:600px){
+
+  .container{
+    padding:25px;
+    border-radius:24px;
+  }
+
+  .header h1{
+    font-size:30px;
+  }
+
 }
 
 </style>
@@ -142,48 +287,89 @@ button:hover{
 
 <div class="container">
 
-  <h3>Bienvenido</h3>
+  <!-- HEADER -->
 
-  <p>Inicia sesión</p>
+  <div class="header">
 
-  <input
-    type="text"
-    id="correo"
-    placeholder="Correo">
+    <h1>
+      Bienvenido
+    </h1>
 
-  <input
-    type="password"
-    id="password"
-    placeholder="Contraseña">
+    <p>
+      Inicia sesión para registrar asistencia
+    </p>
+
+  </div>
+
+  <!-- LOGIN -->
+
+  <div class="input-group">
+
+    <label>
+      Correo
+    </label>
+
+    <input
+      type="text"
+      id="correo"
+      placeholder="Ingresa tu correo">
+
+  </div>
+
+  <div class="input-group">
+
+    <label>
+      Contraseña
+    </label>
+
+    <input
+      type="password"
+      id="password"
+      placeholder="Ingresa tu contraseña">
+
+  </div>
 
   <button onclick="login()">
+
     Ingresar
+
   </button>
+
+  <!-- PANEL -->
 
   <div id="panelAsistencia" style="display:none;">
 
-    <hr>
+    <div
+      class="usuario"
+      id="nombreUsuario">
 
-    <p id="nombreUsuario"></p>
+    </div>
 
     <button onclick="verificarUbicacion()">
+
       Registrar asistencia
+
     </button>
 
     <div class="info">
+
       Instituto Tecnológico de Pachuca
+
     </div>
 
     <!-- ACTIVIDAD -->
-    <div class="actividad-box">
 
-      <h4>
+    <div class="card">
+
+      <h3>
         Actividad actual
-      </h4>
+      </h3>
 
       <div class="dato">
 
-        <strong>Actividad:</strong>
+        <strong>
+          Actividad
+        </strong>
 
         <span id="actividadActual">
           Sin actividad
@@ -193,7 +379,9 @@ button:hover{
 
       <div class="dato">
 
-        <strong>Estado:</strong>
+        <strong>
+          Estado
+        </strong>
 
         <span id="estadoActividad">
           Inactivo
@@ -203,7 +391,9 @@ button:hover{
 
       <div class="dato">
 
-        <strong>Progreso:</strong>
+        <strong>
+          Progreso
+        </strong>
 
         <span id="progresoActual">
           0%
@@ -213,7 +403,9 @@ button:hover{
 
       <div class="dato">
 
-        <strong>Horas completadas:</strong>
+        <strong>
+          Horas completadas
+        </strong>
 
         <span id="horasCompletadas">
           0
@@ -221,12 +413,14 @@ button:hover{
 
       </div>
 
-      <div class="dato restante">
+      <div class="dato">
 
-        <strong>Horas faltantes:</strong>
+        <strong>
+          Horas faltantes
+        </strong>
 
         <span id="horasRestantes">
-          6
+          6 horas
         </span>
 
       </div>
@@ -234,11 +428,12 @@ button:hover{
     </div>
 
     <!-- PROGRESO -->
-    <div class="panel-progreso">
 
-      <h4>
+    <div class="card">
+
+      <h3>
         Progreso diario
-      </h4>
+      </h3>
 
       <div class="barra">
 
@@ -282,8 +477,9 @@ button:hover{
 
         </p>
 
-        <p id="estadoJornada"
-           class="incompleto">
+        <p
+          id="estadoJornada"
+          class="incompleto">
 
           Jornada incompleta
 
@@ -295,7 +491,13 @@ button:hover{
 
   </div>
 
-  <div class="estado" id="estado"></div>
+  <!-- ESTADO -->
+
+  <div
+    class="estado"
+    id="estado">
+
+  </div>
 
 </div>
 
@@ -318,8 +520,10 @@ import {
 }
 from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
 
+/* =========================
+   FIREBASE
+========================= */
 
-// FIREBASE
 const firebaseConfig = {
 
   apiKey:"TU_API_KEY",
@@ -336,21 +540,24 @@ initializeApp(firebaseConfig);
 const db =
 getFirestore(app);
 
+/* =========================
+   UBICACION
+========================= */
 
-// UBICACION
 const LAT_CENTRO = 20.0839;
 
 const LNG_CENTRO = -98.7750;
 
 const MARGEN = 0.0040;
 
-
 let usuarioActual = null;
 
 let usuarioId = null;
 
+/* =========================
+   LOGIN
+========================= */
 
-// LOGIN
 window.login = async()=>{
 
   const correo =
@@ -431,8 +638,10 @@ window.login = async()=>{
 
 };
 
+/* =========================
+   PROGRESO
+========================= */
 
-// PROGRESO TIEMPO REAL
 function cargarProgreso(){
 
   const hoy =
@@ -465,7 +674,6 @@ function cargarProgreso(){
       const act =
       docSnap.data();
 
-      // ACTIVIDAD ACTIVA
       if(
         act.estado === "en_proceso"
       ){
@@ -474,7 +682,6 @@ function cargarProgreso(){
 
       }
 
-      // FINALIZADAS
       if(
 
         act.estado === "finalizada" &&
@@ -504,7 +711,6 @@ function cargarProgreso(){
             act.duracionHoras || 2
           );
 
-          // HORAS REALES
           const horasReales =
           (
             horas *
@@ -520,8 +726,6 @@ function cargarProgreso(){
 
     });
 
-
-    // ACTIVIDAD ACTUAL
     if(actividadActiva){
 
       const progresoActual =
@@ -595,8 +799,6 @@ function cargarProgreso(){
 
     }
 
-
-    // HORAS RESTANTES
     let faltantes =
     6 - horasTotales;
 
@@ -604,8 +806,6 @@ function cargarProgreso(){
       faltantes = 0;
     }
 
-
-    // ACTIVIDADES
     document
     .getElementById(
       "actividadesCompletadas"
@@ -613,8 +813,6 @@ function cargarProgreso(){
     .innerText =
     actividadesFinalizadas;
 
-
-    // HORAS
     document
     .getElementById(
       "horasTrabajadas"
@@ -622,8 +820,6 @@ function cargarProgreso(){
     .innerText =
     horasTotales.toFixed(2);
 
-
-    // FALTANTES
     document
     .getElementById(
       "horasFaltantes"
@@ -639,8 +835,6 @@ function cargarProgreso(){
     faltantes.toFixed(2)
     + " horas";
 
-
-    // PORCENTAJE TOTAL
     let porcentajeHoras =
 
       (
@@ -661,8 +855,6 @@ function cargarProgreso(){
 
     porcentajeHoras + "%";
 
-
-    // ESTADO
     const estado =
 
     document.getElementById(
@@ -696,8 +888,10 @@ function cargarProgreso(){
 
 }
 
+/* =========================
+   UBICACION
+========================= */
 
-// UBICACION
 window.verificarUbicacion = ()=>{
 
   if(!usuarioId){
