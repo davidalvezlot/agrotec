@@ -118,6 +118,33 @@ h2{
 }
 
 /* =========================
+   UBICACION
+========================= */
+
+.ubicacion{
+  background:white;
+  border-radius:24px;
+  padding:20px;
+  border:1px solid #edf1f5;
+  margin-bottom:22px;
+  text-align:center;
+}
+
+.estado-ubicacion{
+  margin-top:10px;
+  font-size:14px;
+  font-weight:700;
+}
+
+.ok{
+  color:#15803d;
+}
+
+.error{
+  color:#dc2626;
+}
+
+/* =========================
    PROGRESO
 ========================= */
 
@@ -160,25 +187,6 @@ h2{
 }
 
 /* =========================
-   UBICACION
-========================= */
-
-.ubicacion{
-  background:white;
-  border-radius:24px;
-  padding:20px;
-  border:1px solid #edf1f5;
-  margin-bottom:22px;
-  text-align:center;
-}
-
-.ubicacion p{
-  font-size:14px;
-  color:#64748b;
-  margin-top:8px;
-}
-
-/* =========================
    BOTONES
 ========================= */
 
@@ -211,11 +219,6 @@ button:hover{
 .problema{
   background:#f1f5f9;
   color:#334155;
-}
-
-.verificar{
-  background:#2563eb;
-  color:white;
 }
 
 button:disabled{
@@ -262,22 +265,17 @@ button:disabled{
 
   <div class="ubicacion">
 
-    <strong id="estadoUbicacion">
-      Verificando ubicación...
+    <strong>
+      Verificación de ubicación
     </strong>
 
-    <p>
-      Debes estar dentro del rango permitido
-      para iniciar la actividad
-    </p>
+    <div
+      class="estado-ubicacion"
+      id="estadoUbicacion">
 
-    <button
-      class="verificar"
-      onclick="validarUbicacion()">
+      Verificando ubicación...
 
-      Verificar ubicación
-
-    </button>
+    </div>
 
   </div>
 
@@ -307,8 +305,6 @@ button:disabled{
     </div>
 
   </div>
-
-  <!-- BOTONES -->
 
   <button
     class="iniciar"
@@ -375,7 +371,7 @@ const db = getFirestore(app);
 
 
 /* =========================
-   RANGO PERMITIDO
+   RANGO TEC DE PACHUCA
 ========================= */
 
 const LAT_MIN = 19.95;
@@ -429,7 +425,137 @@ let actividadData = null;
 
 let intervalo = null;
 
-let ubicacionValida = false;
+
+/* =========================
+   VERIFICAR UBICACION
+========================= */
+
+async function verificarUbicacionInicial(){
+
+  navigator.geolocation.getCurrentPosition(
+
+    async(pos)=>{
+
+      const lat =
+      pos.coords.latitude;
+
+      const lng =
+      pos.coords.longitude;
+
+      let dentro = false;
+
+      if(
+
+        lat >= LAT_MIN &&
+        lat <= LAT_MAX &&
+
+        lng >= LNG_MIN &&
+        lng <= LNG_MAX
+
+      ){
+
+        dentro = true;
+
+      }
+
+      if(dentro){
+
+        estadoUbicacion.innerHTML =
+
+        "🟢 Dentro del rango permitido";
+
+        estadoUbicacion.className =
+        "estado-ubicacion ok";
+
+        btnIniciar.disabled = false;
+
+        if(
+          actividadData &&
+          actividadData.usuarioId
+        ){
+
+          await updateDoc(
+
+            doc(
+              db,
+              "usuarios",
+              actividadData.usuarioId
+            ),
+
+            {
+
+              estadoHoy:"activo"
+
+            }
+
+          );
+
+        }
+
+      }else{
+
+        estadoUbicacion.innerHTML =
+
+        "🔴 Fuera del rango del Tec de Pachuca";
+
+        estadoUbicacion.className =
+        "estado-ubicacion error";
+
+        btnIniciar.disabled = true;
+
+        if(
+          actividadData &&
+          actividadData.usuarioId
+        ){
+
+          await updateDoc(
+
+            doc(
+              db,
+              "usuarios",
+              actividadData.usuarioId
+            ),
+
+            {
+
+              estadoHoy:"inactivo"
+
+            }
+
+          );
+
+        }
+
+      }
+
+    },
+
+    (error)=>{
+
+      console.error(error);
+
+      estadoUbicacion.innerHTML =
+
+      "Error obteniendo ubicación";
+
+      estadoUbicacion.className =
+      "estado-ubicacion error";
+
+      btnIniciar.disabled = true;
+
+    },
+
+    {
+
+      enableHighAccuracy:true,
+      timeout:10000,
+      maximumAge:0
+
+    }
+
+  );
+
+}
 
 
 /* =========================
@@ -502,6 +628,8 @@ async function cargar(){
 
   `;
 
+  await verificarUbicacionInicial();
+
   if(
     actividadData.estado ===
     "finalizada"
@@ -514,8 +642,7 @@ async function cargar(){
     progreso + "%";
 
     textoProgreso.innerHTML =
-    progreso +
-    "% completado";
+    progreso + "% completado";
 
     btnIniciar.disabled = true;
 
@@ -542,8 +669,6 @@ async function cargar(){
     textoProgreso.innerHTML =
     "Esperando inicio";
 
-    btnIniciar.disabled = true;
-
     btnFinalizar.disabled = true;
 
   }
@@ -554,142 +679,10 @@ cargar();
 
 
 /* =========================
-   VALIDAR UBICACION
-========================= */
-
-window.validarUbicacion = ()=>{
-
-  navigator.geolocation.getCurrentPosition(
-
-    async(pos)=>{
-
-      const lat =
-      pos.coords.latitude;
-
-      const lng =
-      pos.coords.longitude;
-
-      console.log(
-        "Ubicación:",
-        lat,
-        lng
-      );
-
-      if(
-
-        lat >= LAT_MIN &&
-        lat <= LAT_MAX &&
-
-        lng >= LNG_MIN &&
-        lng <= LNG_MAX
-
-      ){
-
-        ubicacionValida = true;
-
-        estadoUbicacion.innerHTML =
-        "🟢 Ubicación válida";
-
-        btnIniciar.disabled = false;
-
-        // USUARIO ACTIVO
-        if(
-          actividadData.usuarioId
-        ){
-
-          await updateDoc(
-
-            doc(
-              db,
-              "usuarios",
-              actividadData.usuarioId
-            ),
-
-            {
-
-              estadoHoy:"activo"
-
-            }
-
-          );
-
-        }
-
-      }else{
-
-        ubicacionValida = false;
-
-        estadoUbicacion.innerHTML =
-        "🔴 Fuera del rango permitido";
-
-        btnIniciar.disabled = true;
-
-        // USUARIO INACTIVO
-        if(
-          actividadData.usuarioId
-        ){
-
-          await updateDoc(
-
-            doc(
-              db,
-              "usuarios",
-              actividadData.usuarioId
-            ),
-
-            {
-
-              estadoHoy:"inactivo"
-
-            }
-
-          );
-
-        }
-
-      }
-
-    },
-
-    (error)=>{
-
-      console.error(error);
-
-      estadoUbicacion.innerHTML =
-      "Error obteniendo ubicación";
-
-      btnIniciar.disabled = true;
-
-    },
-
-    {
-
-      enableHighAccuracy:true,
-      timeout:10000,
-      maximumAge:0
-
-    }
-
-  );
-
-};
-
-
-/* =========================
    INICIAR
 ========================= */
 
 window.iniciar = async()=>{
-
-  if(!ubicacionValida){
-
-    alert(
-      "Debes estar dentro del rango permitido"
-    );
-
-    return;
-
-  }
 
   if(
     actividadData.iniciada === true
@@ -795,7 +788,9 @@ function iniciarContador(){
     porcentaje + "%";
 
     textoProgreso.innerHTML =
-    porcentaje + "% completado";
+
+    porcentaje +
+    "% completado";
 
     await updateDoc(
 
@@ -852,7 +847,8 @@ window.finalizar = async()=>{
 
   );
 
-  barra.style.width = "100%";
+  barra.style.width =
+  "100%";
 
   textoProgreso.innerHTML =
   "100% completado";
