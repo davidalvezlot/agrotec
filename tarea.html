@@ -160,6 +160,25 @@ h2{
 }
 
 /* =========================
+   UBICACION
+========================= */
+
+.ubicacion{
+  background:white;
+  border-radius:24px;
+  padding:20px;
+  border:1px solid #edf1f5;
+  margin-bottom:22px;
+  text-align:center;
+}
+
+.ubicacion p{
+  font-size:14px;
+  color:#64748b;
+  margin-top:8px;
+}
+
+/* =========================
    BOTONES
 ========================= */
 
@@ -192,6 +211,11 @@ button:hover{
 .problema{
   background:#f1f5f9;
   color:#334155;
+}
+
+.verificar{
+  background:#2563eb;
+  color:white;
 }
 
 button:disabled{
@@ -234,6 +258,31 @@ button:disabled{
 
   <div class="card" id="info"></div>
 
+  <!-- UBICACION -->
+
+  <div class="ubicacion">
+
+    <strong id="estadoUbicacion">
+      Verificando ubicación...
+    </strong>
+
+    <p>
+      Debes estar dentro del rango permitido
+      para iniciar la actividad
+    </p>
+
+    <button
+      class="verificar"
+      onclick="validarUbicacion()">
+
+      Verificar ubicación
+
+    </button>
+
+  </div>
+
+  <!-- PROGRESO -->
+
   <div class="progreso-box">
 
     <h3>
@@ -259,10 +308,13 @@ button:disabled{
 
   </div>
 
+  <!-- BOTONES -->
+
   <button
     class="iniciar"
     id="btnIniciar"
-    onclick="iniciar()">
+    onclick="iniciar()"
+    disabled>
 
     Iniciar tarea
 
@@ -323,6 +375,17 @@ const db = getFirestore(app);
 
 
 /* =========================
+   RANGO PERMITIDO
+========================= */
+
+const LAT_MIN = 19.95;
+const LAT_MAX = 20.25;
+
+const LNG_MIN = -98.95;
+const LNG_MAX = -98.60;
+
+
+/* =========================
    PARAMETROS
 ========================= */
 
@@ -358,10 +421,15 @@ document.getElementById("btnIniciar");
 const btnFinalizar =
 document.getElementById("btnFinalizar");
 
+const estadoUbicacion =
+document.getElementById("estadoUbicacion");
+
 
 let actividadData = null;
 
 let intervalo = null;
+
+let ubicacionValida = false;
 
 
 /* =========================
@@ -434,7 +502,6 @@ async function cargar(){
 
   `;
 
-  // FINALIZADA
   if(
     actividadData.estado ===
     "finalizada"
@@ -458,7 +525,6 @@ async function cargar(){
 
   }
 
-  // EN PROCESO
   if(
     actividadData.iniciada === true
   ){
@@ -476,7 +542,7 @@ async function cargar(){
     textoProgreso.innerHTML =
     "Esperando inicio";
 
-    btnIniciar.disabled = false;
+    btnIniciar.disabled = true;
 
     btnFinalizar.disabled = true;
 
@@ -488,10 +554,142 @@ cargar();
 
 
 /* =========================
+   VALIDAR UBICACION
+========================= */
+
+window.validarUbicacion = ()=>{
+
+  navigator.geolocation.getCurrentPosition(
+
+    async(pos)=>{
+
+      const lat =
+      pos.coords.latitude;
+
+      const lng =
+      pos.coords.longitude;
+
+      console.log(
+        "Ubicación:",
+        lat,
+        lng
+      );
+
+      if(
+
+        lat >= LAT_MIN &&
+        lat <= LAT_MAX &&
+
+        lng >= LNG_MIN &&
+        lng <= LNG_MAX
+
+      ){
+
+        ubicacionValida = true;
+
+        estadoUbicacion.innerHTML =
+        "🟢 Ubicación válida";
+
+        btnIniciar.disabled = false;
+
+        // USUARIO ACTIVO
+        if(
+          actividadData.usuarioId
+        ){
+
+          await updateDoc(
+
+            doc(
+              db,
+              "usuarios",
+              actividadData.usuarioId
+            ),
+
+            {
+
+              estadoHoy:"activo"
+
+            }
+
+          );
+
+        }
+
+      }else{
+
+        ubicacionValida = false;
+
+        estadoUbicacion.innerHTML =
+        "🔴 Fuera del rango permitido";
+
+        btnIniciar.disabled = true;
+
+        // USUARIO INACTIVO
+        if(
+          actividadData.usuarioId
+        ){
+
+          await updateDoc(
+
+            doc(
+              db,
+              "usuarios",
+              actividadData.usuarioId
+            ),
+
+            {
+
+              estadoHoy:"inactivo"
+
+            }
+
+          );
+
+        }
+
+      }
+
+    },
+
+    (error)=>{
+
+      console.error(error);
+
+      estadoUbicacion.innerHTML =
+      "Error obteniendo ubicación";
+
+      btnIniciar.disabled = true;
+
+    },
+
+    {
+
+      enableHighAccuracy:true,
+      timeout:10000,
+      maximumAge:0
+
+    }
+
+  );
+
+};
+
+
+/* =========================
    INICIAR
 ========================= */
 
 window.iniciar = async()=>{
+
+  if(!ubicacionValida){
+
+    alert(
+      "Debes estar dentro del rango permitido"
+    );
+
+    return;
+
+  }
 
   if(
     actividadData.iniciada === true
@@ -593,16 +791,12 @@ function iniciarContador(){
 
     }
 
-    // ACTUALIZAR BARRA
     barra.style.width =
     porcentaje + "%";
 
     textoProgreso.innerHTML =
+    porcentaje + "% completado";
 
-    porcentaje +
-    "% completado";
-
-    // GUARDAR PROGRESO
     await updateDoc(
 
       doc(
@@ -622,223 +816,18 @@ function iniciarContador(){
 
     );
 
-    // ACTUALIZAR USUARIO
-    if(actividadData.usuarioId){
-
-      await updateDoc(
-
-        doc(
-          db,
-          "usuarios",
-          actividadData.usuarioId
-        ),
-
-        {
-
-          estadoActividad:
-          "Trabajando",
-
-          actividadActual:
-          actividadData.nombre,
-
-          progresoActual:
-          porcentaje
-
-        }
-
-      );
-
-    }
-
-    /* =========================
-       FINALIZAR AUTOMATICO
-    ========================= */
-
-    if(porcentaje >= 100){
-
-      clearInterval(intervalo);
-
-      const horasReales =
-
-      (
-        transcurrido / 3600
-      ).toFixed(2);
-
-      // FINALIZAR ACTIVIDAD
-      await updateDoc(
-
-        doc(
-          db,
-          "actividades",
-          actId
-        ),
-
-        {
-
-          estado:"finalizada",
-
-          iniciada:false,
-
-          fechaFin:
-          new Date().toISOString(),
-
-          progreso:100,
-
-          tiempoTranscurrido:
-          transcurrido,
-
-          horasReales:
-          Number(horasReales)
-
-        }
-
-      );
-
-      // ACTUALIZAR USUARIO
-      if(actividadData.usuarioId){
-
-        await updateDoc(
-
-          doc(
-            db,
-            "usuarios",
-            actividadData.usuarioId
-          ),
-
-          {
-
-            horasHoy:
-            increment(
-              Number(horasReales)
-            ),
-
-            actividadesHoy:
-            increment(1),
-
-            ultimoProgreso:100,
-
-            progresoActual:100,
-
-            estadoActividad:
-            "Finalizada",
-
-            actividadActual:
-            actividadData.nombre
-
-          }
-
-        );
-
-      }
-
-      // LIBERAR RECURSO
-      if(actividadData.recursoId){
-
-        await updateDoc(
-
-          doc(
-            db,
-            "recursos",
-            actividadData.recursoId
-          ),
-
-          {
-
-            estado:"disponible",
-
-            asignadoA:"",
-
-            nombreAsignado:"",
-
-            rolAsignado:""
-
-          }
-
-        );
-
-      }
-
-      // INTERFAZ
-      barra.style.width =
-      "100%";
-
-      textoProgreso.innerHTML =
-      "100% completado";
-
-      btnFinalizar.disabled = true;
-
-      alert(
-        "Actividad completada automáticamente"
-      );
-
-    }
-
   },1000);
 
 }
 
 
 /* =========================
-   FINALIZAR MANUAL
+   FINALIZAR
 ========================= */
 
 window.finalizar = async()=>{
 
-  if(
-    actividadData.iniciada !== true
-  ){
-
-    alert(
-      "Primero debes iniciar la tarea"
-    );
-
-    return;
-
-  }
-
   clearInterval(intervalo);
-
-  const inicio =
-  new Date(
-    actividadData.fechaInicio
-  ).getTime();
-
-  const ahora =
-  new Date().getTime();
-
-  const transcurrido =
-  Math.floor(
-    (ahora - inicio)/1000
-  );
-
-  const duracionSegundos =
-
-  (
-    actividadData.duracionHoras || 2
-  ) * 3600;
-
-  let porcentaje =
-
-  Math.floor(
-
-    (
-      transcurrido /
-      duracionSegundos
-    ) * 100
-
-  );
-
-  if(porcentaje > 100){
-
-    porcentaje = 100;
-
-  }
-
-  const horasReales =
-
-  (
-    transcurrido / 3600
-  ).toFixed(2);
 
   await updateDoc(
 
@@ -854,101 +843,24 @@ window.finalizar = async()=>{
 
       iniciada:false,
 
+      progreso:100,
+
       fechaFin:
-      new Date().toISOString(),
-
-      progreso:porcentaje,
-
-      tiempoTranscurrido:
-      transcurrido,
-
-      horasReales:
-      Number(horasReales)
+      new Date().toISOString()
 
     }
 
   );
 
-  if(actividadData.usuarioId){
-
-    await updateDoc(
-
-      doc(
-        db,
-        "usuarios",
-        actividadData.usuarioId
-      ),
-
-      {
-
-        horasHoy:
-        increment(
-          Number(horasReales)
-        ),
-
-        actividadesHoy:
-        increment(1),
-
-        ultimoProgreso:
-        porcentaje,
-
-        progresoActual:
-        porcentaje,
-
-        estadoActividad:
-        "Finalizada",
-
-        actividadActual:
-        actividadData.nombre
-
-      }
-
-    );
-
-  }
-
-  if(actividadData.recursoId){
-
-    await updateDoc(
-
-      doc(
-        db,
-        "recursos",
-        actividadData.recursoId
-      ),
-
-      {
-
-        estado:"disponible",
-
-        asignadoA:"",
-
-        nombreAsignado:"",
-
-        rolAsignado:""
-
-      }
-
-    );
-
-  }
-
-  barra.style.width =
-  porcentaje + "%";
+  barra.style.width = "100%";
 
   textoProgreso.innerHTML =
-
-  porcentaje +
-  "% completado";
+  "100% completado";
 
   btnFinalizar.disabled = true;
 
   alert(
-
-    "Actividad finalizada con "
-    + porcentaje +
-    "% de progreso"
-
+    "Actividad finalizada"
   );
 
 };
