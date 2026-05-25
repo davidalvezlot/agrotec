@@ -5,16 +5,18 @@
 <div class="progreso-box">
 
   <h3>
-    Validación de ubicación
+    Validación de actividad
   </h3>
 
-  <button
-    class="iniciar"
-    onclick="validarUbicacion()">
+  <div class="barra">
 
-    Validar ubicación
+    <div
+      class="progreso"
+      id="barraValidacion"
+      style="width:0%">
+    </div>
 
-  </button>
+  </div>
 
   <div
     class="texto-progreso"
@@ -23,5 +25,13 @@
     Debes validar tu ubicación antes de iniciar
 
   </div>
+
+  <button
+    class="iniciar"
+    onclick="validarUbicacion()">
+
+    Validar ubicación
+
+  </button>
 
 </div>
